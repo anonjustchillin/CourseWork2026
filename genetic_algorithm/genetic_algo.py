@@ -1,5 +1,5 @@
 import random
-
+import copy
 from genetic_algorithm.models.individual import Individual
 from genetic_algorithm.algorithms.ga_operators import (
     reanimate_chromosome,
@@ -113,14 +113,10 @@ class GeneticAlgorithm:
         """
         parent_pool = []
 
-        shuffled = population[:]
-        random.shuffle(shuffled)
-
-        for i in range(0, len(shuffled) - 1, 2):
-            group = [shuffled[i], shuffled[i + 1]]
+        while len(parent_pool) < self.pop_size // 2:
+            group = random.sample(population, self.tournament_size)
             winner = min(group, key=lambda ind: ind.fitness)
             parent_pool.append(winner)
-
         return parent_pool
 
     def _create_offspring(self, parent_pool, new_population):
@@ -154,42 +150,58 @@ class GeneticAlgorithm:
 
         return None
 
-    def run(self):
+    def run(self, fixed_generations=None):
         """
-        Запускає головний еволюційний цикл генетичного алгоритму.
+                Запускає головний еволюційний цикл.
 
-        Повертає:
-        Individual: Найкраща знайдена особина після зупинки алгоритму.
-        """
+                Параметри:
+                fixed_generations (int): Якщо задано, алгоритм виконає рівно цю кількість
+                    ітерацій (режим GA_fixed для експериментів).
+                    Якщо None, працює до досягнення max_stagnation.
+
+                Повертає:
+                tuple: (Individual, list) — найкраща особина та масив значень рекорду за ітераціями.
+                """
+
         population = self._initialize_population()
         population.sort()
 
         best = population[0]
+        history = [best.fitness]
         stagnation_counter = 0
         generation = 0
 
-        print(f"Початковий рекорд: {best.fitness:.2f}")
+        if fixed_generations is None:
+            print(f"Початковий рекорд: {best.fitness:.2f}")
 
-        while stagnation_counter < self.max_stagnation:
+        while True:
+            if fixed_generations is not None:
+                if generation >= fixed_generations: break
+            elif stagnation_counter >= self.max_stagnation:
+                break
+
             generation += 1
             parent_pool = self._tournament_selection(population)
 
             elites = population[:self.elite_count]
-            new_population = [Individual(e.chromosome) for e in elites]
-            for ind in new_population:
-                self._evaluate_individual(ind)
+            new_population = [copy.deepcopy(e) for e in elites]
+
+            failed_attempts = 0
+            max_total_retries = max_retries * self.pop_size
 
             while len(new_population) < self.pop_size:
                 offspring = self._create_offspring(parent_pool, new_population)
 
-                if offspring is None:
-                    parent_pool_individual = random.choice(parent_pool)
-                    duplicate = Individual(parent_pool_individual.chromosome)
-                    self._evaluate_individual(duplicate)
-                    new_population.append(duplicate)
-                    print(f"Покоління {generation}: не вдалось знайти унікального нащадка, додано дублікат")
-                else:
+                if offspring is not None:
                     new_population.append(offspring)
+                    failed_attempts = 0
+                else:
+                    failed_attempts += 1
+
+                if failed_attempts > max_total_retries:
+                    backup_parent = random.choice(parent_pool)
+                    new_population.append(copy.deepcopy(backup_parent))
+                    failed_attempts = 0
 
             new_population.sort()
             population = new_population
@@ -197,9 +209,11 @@ class GeneticAlgorithm:
             if population[0].fitness < best.fitness:
                 best = population[0]
                 stagnation_counter = 0
-                print(f"Покоління {generation}: новий рекорд {best.fitness:.2f}")
+                if fixed_generations is None:
+                    print(f"Покоління {generation}: новий рекорд {best.fitness:.2f}")
             else:
                 stagnation_counter += 1
 
-        print(f"Алгоритм завершено на поколінні {generation}, рекорд: {best.fitness:.2f}")
-        return best
+            history.append(best.fitness)
+
+        return best, history
