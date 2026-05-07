@@ -46,13 +46,13 @@ class TaskGenerator:
         a_max = self.a_mean * (1 + self.d_var)
         a = [round(random.uniform(a_min, a_max)) for _ in range(m)]
 
-        b_mean = (self.a_mean * m) / (gamma * n)
+        b_mean = (self.a_mean * m) / ((1-gamma) * n)
         b_min = b_mean * (1 - self.d_var)
         b_max = b_mean * (1 + self.d_var)
         b = [round(random.uniform(b_min, b_max)) for _ in range(n)]
 
         # Приріст потужності (delta_a)
-        delta_a_mean = (self.a_mean * beta) / q
+        delta_a_mean = beta*(n*b_mean - m*self.a_mean) / (gamma*m)
         delta_a_min = delta_a_mean * (1 - self.delta_a_var)
         delta_a_max = delta_a_mean * (1 + self.delta_a_var)
 
@@ -75,8 +75,8 @@ class TaskGenerator:
             k.append(row_k)
 
         # Бюджет (B)
-        max_costs_sum = sum(max(row) for row in k)
-        budget = round(tau * max_costs_sum)
+        max_costs_sum = sum(max(row) for row in delta_a)
+        budget = round(tau * self.mu * max_costs_sum)
 
         return {
             "a": a,
