@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 import numpy as np
+import statistics as stats
 from experiments.config import BASE_PARAMS_1, BASE_PARAMS_2, BASE_PARAMS_3
 from genetic_algorithm.genetic_algo import GeneticAlgorithm
 from greedy_algorithm.greedy_algo import GreedyAlgorithm
@@ -75,7 +76,7 @@ class ExperimentCreator:
 
             record_log = []
             for k in range(1, fixed_generations+1):
-                curr_solution = GeneticAlgorithm(curr_task_data, pop_size, elite_percent, mutation_rate, np.inf)
+                curr_solution = GeneticAlgorithm(curr_task_data, pop_size, mutation_rate, elite_percent, np.inf)
                 _, curr_record = curr_solution.run(fixed_generations)
                 record_log.append(curr_record)
 
@@ -104,11 +105,22 @@ class ExperimentCreator:
         return results
 
     def run_experiment_2(self):
-        def plot_result(x, y): # гістограми
-            plt.hist(x)
-            plt.title("Вплив кількості особин в популяції (I) на ЦФ генетичного алгоритму")
-            plt.ylabel("Значення ЦФ")
-            plt.grid(alpha=0.3)
+        def plot_result(data, class_names, name=''): # гістограми
+            x = len(class_names)
+
+            width = 0.25
+            multiplier = 0
+
+            fig, ax = plt.subplots(layout='constrained')
+            for pop_size, values in data.items():
+                offset = width * multiplier
+                ax.bar(x+offset, values, width, label=pop_size)
+                multiplier += 1
+
+            ax.set_title("Вплив кількості особин в популяції (I) на ЦФ генетичного алгоритму")
+            ax.set_ylabel("Значення ЦФ")
+            ax.set_xticks(x + width, class_names)
+            ax.legend()
             plt.show()
 
             #plt.savefig(self.output_dir, dpi=DPI)
@@ -127,6 +139,25 @@ class ExperimentCreator:
         n = self.n_2
         q = self.q_2
         K = self.K_2
+
+        class_names = ["R1-B1", "R3-B1", "R1-B3", "R3-B3", "R2-B2"]
+
+        results = {}
+
+        for class_name in class_names:
+            results, results_k = {i: [] for i in self.pop_size_list}
+            for k in range(1, K+1):
+                curr_task = TaskGenerator()
+                curr_task_data = curr_task.generate(m, n, q, class_name)
+                for pop_size in self.pop_size_list:
+                    curr_solution = GeneticAlgorithm(curr_task_data, pop_size, mutation_rate, elite_percent, max_stagnation)
+                    best_res, _ = curr_solution.run()
+                    results_k[pop_size].append(best_res.fitness)
+
+            for pop_size in self.pop_size_list:
+                results[pop_size] = stats.fmean(results_k[pop_size])
+
+        plot_result(results, class_names)
 
         return
 
