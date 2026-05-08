@@ -1,6 +1,6 @@
 import random
 
-from generator.config import BASE_CONSTANTS, TASK_CLASSES
+from generator.config import BASE_CONSTANTS, TASK_R_CLASSES, TASK_B_CLASSES, TASK_S_CLASSES
 
 
 class TaskGenerator:
@@ -15,26 +15,36 @@ class TaskGenerator:
         self.mu = constants["mu"]
         self.k_var = constants["k_var"]
 
-    def generate(self, m, n, q, class_name):
+    def generate(self, r_class_name, b_class_name, s_class_name):
         """
         Генерує параметри задачі для заданого класу складності.
 
         Параметри:
-        m (int): Кількість підприємств.
-        n (int): Кількість споживачів.
-        q (int): Кількість сценаріїв розширення.
-        class_name (str): Назва класу (наприклад, "R1-B1").
+        r_class_name (str): Назва R класу (наприклад, "R1").
+        b_class_name (str): Назва B класу (наприклад, "B1").
+        s_class_name (str): Назва S класу (наприклад, "S1").
 
         Повертає:
-        dict: Словник з ключами a, b, c, delta_a, k, budget.
+        dict: Словник з ключами a, b, c, delta_a, k, budget, m, n, q.
         """
-        if class_name not in TASK_CLASSES:
-            raise ValueError(f"Невідомий клас задачі: {class_name}")
+        if r_class_name not in TASK_R_CLASSES:
+            raise ValueError(f"Невідомий R клас задачі: {r_class_name}")
+        if b_class_name not in TASK_B_CLASSES:
+            raise ValueError(f"Невідомий B клас задачі: {b_class_name}")
+        if s_class_name not in TASK_S_CLASSES:
+            raise ValueError(f"Невідомий S клас задачі: {s_class_name}")
 
-        params = TASK_CLASSES[class_name]
-        gamma = params["gamma"]
-        beta = params["beta"]
-        tau = params["tau"]
+        r_params = TASK_R_CLASSES[r_class_name]
+        gamma = r_params["gamma"]
+        beta = r_params["beta"]
+
+        b_params = TASK_B_CLASSES[b_class_name]
+        tau = b_params["tau"]
+
+        s_params = TASK_S_CLASSES[s_class_name]
+        m = s_params["m"]
+        n = s_params["n"]
+        q = s_params["q"]
 
         # Транспортні витрати (c)
         c_min = self.c_mean * (1 - self.c_var)
@@ -84,5 +94,8 @@ class TaskGenerator:
             "c": c,
             "delta_a": delta_a,
             "k": k,
-            "budget": budget
+            "budget": budget,
+            "m": m,
+            "n": n,
+            "q": q
         }
