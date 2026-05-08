@@ -2,9 +2,11 @@ import time
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
+import numpy as np
 from experiments.config import BASE_PARAMS_1, BASE_PARAMS_2, BASE_PARAMS_3
 from genetic_algorithm.genetic_algo import GeneticAlgorithm
 from greedy_algorithm.greedy_algo import GreedyAlgorithm
+from generator.task_generator import TaskGenerator
 
 
 """
@@ -41,17 +43,57 @@ class ExperimentCreator:
         time_end = time.time()
         self.time_elapsed = time_end - self.time_start
 
-    def run_experiment_1(self):
-        """
+    def run_experiment_1(self, class_name="R2-B2"):
+        def trial(class_name, s_class_name, fixed_generations, pop_size, elite_percent, mutation_rate):
+            """
             Параметри:
+            class_name (str): Назва класу (наприклад, "R1-B1").
+            s_class_name (str): Назва S класу (наприклад, "S1").
             fixed_generations (int): Максимальна кількість ітерацій (режим GA_fixed для експериментів).
             pop_size (int): Розмір популяції (парне число).
             elite_percent (float): Частка елітних особин (від 0 до 1).
             mutation_rate (float): Ймовірність мутації (від 0 до 1).
-        """
-        def trial():
+            """
+            if s_class_name == "S1":
+                m = 5
+                n = 10
+                q = 2
+            elif s_class_name == "S2":
+                m = 20
+                n = 50
+                q = 5
+            else:
+                m = 100
+                n = 200
+                q = 10
+
+            curr_task = TaskGenerator()
+            curr_task_data = curr_task.generate(m, n, q, class_name)
+
+            record_log = []
+            for k in range(1, fixed_generations+1):
+                curr_solution = GeneticAlgorithm(curr_task_data, pop_size, elite_percent, mutation_rate, np.inf)
+                _, curr_record = curr_solution.run(fixed_generations)
+                record_log.append(curr_record)
+
+            return record_log
+
+        def plot_result(x, y):
+            plt.plot(x, y)
+            plt.title("Зміна значення ЦФ від кількості ітерації генетичного алгоритму")
+            plt.xlabel("Номер ітерації")
+            plt.ylabel("Значення ЦФ")
+            plt.grid(alpha=0.3)
+            plt.show()
             return
-        return
+
+        results = {}
+        for l in ["S1", "S2", "S3"]:
+            record_log = trial(class_name, l, self.fixed_generations,)
+            plot_result(self.fixed_generations, record_log)
+            results[l] = record_log
+
+        return results
 
     def run_experiment_2(self):
         """
