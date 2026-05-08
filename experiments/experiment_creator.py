@@ -122,9 +122,15 @@ class ExperimentCreator:
             elite_percent (float): Частка елітних особин (від 0 до 1).
             mutation_rate (float): Ймовірність мутації (від 0 до 1).
         """
+
+        m = self.m_2
+        n = self.n_2
+        q = self.q_2
+        K = self.K_2
+
         return
 
-    def run_experiment_3(self):
+    def run_experiment_3(self, class_name="R2-B2"):
         def plot_result(x, y1, y2, y_name='', name=''):
             plt.plot(x, y1, label='Жадібний алгоритм')
             plt.plot(x, y2, label='Генетичний алгоритм')
@@ -146,6 +152,59 @@ class ExperimentCreator:
             elite_percent (float): Частка елітних особин (від 0 до 1).
             mutation_rate (float): Ймовірність мутації (від 0 до 1).
         """
+
+        m = self.m_3
+        n = self.n_3
+        q = self.q_3
+        K = self.K_3
+
+        greedy_time = []
+        genetic_time = []
+
+        greedy_results = []
+        genetic_results = []
+
+        for v in self.v_scale:
+            m = m*v
+            n = n*v
+            q = q*v
+
+            greedy_time_k = []
+            genetic_time_k = []
+
+            greedy_results_k = []
+            genetic_results_k = []
+
+            for k in range(1, K+1):
+                curr_task = TaskGenerator()
+                curr_task_data = curr_task.generate(m, n, q, class_name)
+
+                self.start_time()
+                greedy_algo = GreedyAlgorithm(curr_task_data)
+                greedy_res = greedy_algo.run()
+                self.end_time()
+                greedy_time_k.append(self.time_elapsed)
+
+                greedy_results_k.append(greedy_res)
+
+                self.start_time()
+                genetic_algo = GeneticAlgorithm(curr_task_data)
+                best_res, _ = genetic_algo.run()
+                self.end_time()
+                genetic_time_k.append(self.time_elapsed)
+
+                genetic_results_k.append(best_res.fitness)
+
+            greedy_time.append(sum(greedy_time_k)/K)
+            genetic_time.append(sum(genetic_time_k)/K)
+
+            greedy_results.append(sum(greedy_results_k)/K)
+            genetic_results.append(sum(genetic_results_k)/K)
+
+            plot_result(self.v_scale, greedy_time, genetic_time, y_name='час роботи')
+            plot_result(self.v_scale, greedy_results, genetic_results, y_name='точність')
+
+
         return
 
     def run_all(self):
