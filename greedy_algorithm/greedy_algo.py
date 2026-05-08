@@ -1,5 +1,7 @@
 from transport_problem.canonical_form import to_canonical_form
 from transport_problem.vam import calculate_vam
+from transport_problem.evaluator import calculate_transport_cost
+
 
 class GreedyAlgorithm:
     def __init__(self, task_data):
@@ -42,6 +44,15 @@ class GreedyAlgorithm:
                     if sum(self.b) < sum(self.a):
                         _, self.b, self.c = to_canonical_form(self.a, self.b, self.c)
                     x = calculate_vam(self.a, self.b, self.c)
-                    return x, y
+
+                    scenario_cost = sum(
+                        y[i][t] * self.k[i][t]
+                        for i in range(self.m)
+                        for t in range(self.q)
+                    )
+                    transport_cost = calculate_transport_cost(x, self.c)
+                    z = scenario_cost + transport_cost
+
+                    return x, y, z
 
         return None
