@@ -16,9 +16,10 @@ from generator.task_generator import TaskGenerator
 3. дослідження впливу розмірності задач на точність та час роботи жадібного та генетичного GA алгоритмів.
 """
 
+DPI = 300
 
 class ExperimentCreator:
-    def __init__(self, params_1=BASE_PARAMS_1, params_2=BASE_PARAMS_2, params_3=BASE_PARAMS_3):
+    def __init__(self, output_dir, params_1=BASE_PARAMS_1, params_2=BASE_PARAMS_2, params_3=BASE_PARAMS_3):
         self.fixed_generations = params_1["fixed_generations"]
 
         self.m_2 = params_2["m"]
@@ -35,6 +36,8 @@ class ExperimentCreator:
 
         self.time_start = 0
         self.time_elapsed = 0
+
+        self.output_dir = output_dir
 
     def start_time(self):
         self.time_start = time.time()
@@ -78,13 +81,18 @@ class ExperimentCreator:
 
             return record_log
 
-        def plot_result(x, y):
+        def plot_result(x, y, name=''):
             plt.plot(x, y)
             plt.title("Зміна значення ЦФ від кількості ітерації генетичного алгоритму")
             plt.xlabel("Номер ітерації")
             plt.ylabel("Значення ЦФ")
             plt.grid(alpha=0.3)
             plt.show()
+
+            #plot_path = os.path.join(self.output_dir, name + ".png")
+            #plt.savefig(self.output_dir, dpi=DPI)
+
+            #plt.close()
             return
 
         results = {}
@@ -96,6 +104,17 @@ class ExperimentCreator:
         return results
 
     def run_experiment_2(self):
+        def plot_result(x, y): # гістограми
+            plt.hist(x)
+            plt.title("Вплив кількості особин в популяції (I) на ЦФ генетичного алгоритму")
+            plt.ylabel("Значення ЦФ")
+            plt.grid(alpha=0.3)
+            plt.show()
+
+            #plt.savefig(self.output_dir, dpi=DPI)
+
+            # plt.close()
+            return
         """
             Параметри:
             pop_size_list (list of int): Масив розмірів популяції (парні числа).
@@ -106,6 +125,20 @@ class ExperimentCreator:
         return
 
     def run_experiment_3(self):
+        def plot_result(x, y1, y2, y_name='', name=''):
+            plt.plot(x, y1, label='Жадібний алгоритм')
+            plt.plot(x, y2, label='Генетичний алгоритм')
+            plt.title("Вплив розмірності задачі на "+str.lower(y_name)+" алгоритмів")
+            plt.xlabel("Коефіцієнт масштабу v")
+            plt.ylabel(y_name)
+            plt.legend()
+            plt.grid(alpha=0.3)
+            plt.show()
+
+            #plt.savefig(self.output_dir, dpi=DPI)
+
+            # plt.close()
+            return
         """
             Параметри (для GA):
             pop_size (int): Розмір популяції (парне число).
@@ -119,4 +152,3 @@ class ExperimentCreator:
         self.run_experiment_1()
         self.run_experiment_2()
         self.run_experiment_3()
-        return
