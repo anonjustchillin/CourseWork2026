@@ -26,4 +26,4 @@ def to_canonical_form(a, b, c):
         for i in range(len(a_can)):
             c_can[i].append(0)
 
-    return a_can, b_can, c_can
+    return b_can, c_can
