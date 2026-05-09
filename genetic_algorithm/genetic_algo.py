@@ -17,7 +17,7 @@ class GeneticAlgorithm:
     """Головний менеджер генетичного алгоритму."""
 
     def __init__(self, task_data, pop_size, mutation_rate, elite_percent,
-                 max_stagnation, tournament_size=2):
+                 max_stagnation):
         """
         Параметри:
         task_data (dict): Вхідні дані задачі (a, b, c, delta_a, k, budget).
@@ -39,9 +39,9 @@ class GeneticAlgorithm:
 
         self.pop_size = pop_size
         self.mutation_rate = mutation_rate
-        self.elite_count = round(elite_percent * pop_size / 2) * 2
+        self.elite_percent = elite_percent
         self.max_stagnation = max_stagnation
-        self.tournament_size = tournament_size
+        self.tournament_size = 2
 
     def _generate_chromosome(self):
         """Генерує випадкову хромосому розміром (m x q)."""
@@ -82,7 +82,6 @@ class GeneticAlgorithm:
     def _initialize_population(self):
         """Створює початкову популяцію допустимих унікальних особин."""
         population = []
-        print("Ініціалізація початкової популяції")
 
         while len(population) < self.pop_size:
             y = self._generate_chromosome()
@@ -111,12 +110,17 @@ class GeneticAlgorithm:
         Повертає:
         list: Батьківський пул розміром pop_size // 2.
         """
+        shuffled = population[:]
+        random.shuffle(shuffled)
+
         parent_pool = []
 
-        while len(parent_pool) < self.pop_size // 2:
-            group = random.sample(population, self.tournament_size)
-            winner = min(group, key=lambda ind: ind.fitness)
+        for i in range(0, len(shuffled) - 1, 2):
+            a_i = shuffled[i]
+            b_i1 = shuffled[i + 1]
+            winner = a_i if a_i.fitness <= b_i1.fitness else b_i1
             parent_pool.append(winner)
+
         return parent_pool
 
     def _create_offspring(self, parent_pool, new_population):
@@ -152,16 +156,16 @@ class GeneticAlgorithm:
 
     def run(self, fixed_generations=None):
         """
-                Запускає головний еволюційний цикл.
+        Запускає головний еволюційний цикл.
 
-                Параметри:
-                fixed_generations (int): Якщо задано, алгоритм виконає рівно цю кількість
-                    ітерацій (режим GA_fixed для експериментів).
-                    Якщо None, працює до досягнення max_stagnation.
+        Параметри:
+        fixed_generations (int): Якщо задано, алгоритм виконає рівно цю кількість
+                ітерацій (режим GA_fixed для експериментів).
+                Якщо None, працює до досягнення max_stagnation.
 
-                Повертає:
-                tuple: (Individual, list) — найкраща особина та масив значень рекорду за ітераціями.
-                """
+        Повертає:
+        tuple: (Individual, list) — найкраща особина та масив значень рекорду за ітераціями.
+        """
 
         population = self._initialize_population()
         population.sort()
@@ -181,31 +185,48 @@ class GeneticAlgorithm:
                 break
 
             generation += 1
+
+            records = round((self.elite_percent * self.pop_size) / 2) * 2
             parent_pool = self._tournament_selection(population)
 
-            elites = population[:self.elite_count]
-            new_population = [copy.deepcopy(e) for e in elites]
+            new_population = []
 
-            failed_attempts = 0
-            max_total_retries = max_retries * self.pop_size
+            counter = 0
 
-            while len(new_population) < self.pop_size:
-                offspring = self._create_offspring(parent_pool, new_population)
+            while counter < self.pop_size - records:
+                p1, p2 = random.sample(parent_pool, 2)
 
-                if offspring is not None:
-                    new_population.append(offspring)
-                    failed_attempts = 0
-                else:
-                    failed_attempts += 1
+                child1_y, child2_y = crossover(p1.chromosome, p2.chromosome)
 
-                if failed_attempts > max_total_retries:
-                    backup_parent = random.choice(parent_pool)
-                    new_population.append(copy.deepcopy(backup_parent))
-                    failed_attempts = 0
+                child1_y = mutate(child1_y, self.mutation_rate, self.q)
+                child2_y = mutate(child2_y, self.mutation_rate, self.q)
+
+                for child_y in [child1_y, child2_y]:
+                    child_y, is_viable = reanimate_chromosome(
+                        child_y, self.a, self.b, self.delta_a, self.k, self.budget
+                    )
+                    if not is_viable:
+                        continue
+
+                    candidate = Individual(child_y)
+                    if candidate in new_population:
+                        continue
+
+                    self._evaluate_individual(candidate)
+
+                    new_population.append(candidate)
+
+                    if candidate.fitness < best.fitness:
+                        best = candidate
+
+                    counter += 1
+                    if counter >= self.pop_size - records: break
+
+            elites = population[:records]
+            new_population.extend([copy.deepcopy(e) for e in elites])
 
             new_population.sort()
             population = new_population
-
             if population[0].fitness < best.fitness:
                 best = population[0]
                 stagnation_counter = 0
