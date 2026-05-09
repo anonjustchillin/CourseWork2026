@@ -7,11 +7,10 @@ from experiments.experiment_creator import ExperimentCreator
 console = Console()
 app = typer.Typer()
 
-# console.print
-ERROR_MESS = f'[bold magenta]Виникла помилка.[/bold magenta]'
-NO_DATA = f'[bold magenta]Даних немає.[/bold magenta]'
-INCORRECT_DATA = f'[bold magenta]Неправильно введено дані.[/bold magenta]'
-NO_ACCESS = f'[bold magenta]У Вас немає доступу до цієї команди.[/bold magenta]'
+ERROR_MESS = 'Виникла помилка.'
+NO_DATA = 'Даних немає.'
+INCORRECT_DATA = 'Неправильно введено дані.'
+NO_ACCESS = 'У Вас немає доступу до цієї команди.'
 
 MAIN_MENU = ["Введення даних задачі",
         "Розв'язати задачу всіма розробленими алгоритмами",
@@ -46,11 +45,101 @@ def about():
 def cut_str(text: str):
     return " ".join(text.split())
 
+######################### ВИВЕДЕННЯ ТЕКСТУ НА КОНСОЛЬ
+def print_comment(text: str):
+    console.print(f"[italic]{text}[/italic]")
+def print_error(text: str):
+    console.print(f"[bold magenta]{text}[/bold magenta]")
+def print_title(text: str):
+    console.print(f"[bold blue]{str.upper(text)}[/bold blue]")
+def print_subtitle(text: str):
+    console.print(f"[bold]{str.upper(text)}[/bold]")
+def print_success(text: str):
+    console.print(f"[bold green]{text}[/bold green]")
+
+######################### ЕКСПЕРИМЕНТИ
+"""
+1)	задання діапазонів зміни параметрів експериментів:
+	розмірність задач (від; до; крок);
+	кількість ІЗ, яку необхідно згенерувати для кожної розмірності;
+	діапазони зміни параметрів задач (коефіцієнтів ЦФ, обмежень тощо);
+2)	генерація множини ІЗ;
+3)	розв’язання множини згенерованих ІЗ усіма розробленими методами;
+"""
+######## ОТРИМАННЯ ДАНИХ
+def setup_experiments():
+    def setup_1():
+        return
+    def setup_2():
+        return
+    def setup_3():
+        return
+
+######## ЗАПУСК ЕКСПЕРИМЕНТУ/ІВ
+def run_experiments():
+    def run_1(experiments):
+        console.print("Експеримент 1....")
+        experiments.run_experiment_1()
+        console.print("Готово!")
+    def run_2(experiments):
+        console.print("Експеримент 2....")
+        experiments.run_experiment_2()
+        console.print("Готово!")
+        print()
+    def run_3(experiments):
+        console.print("Експеримент 3....")
+        experiments.run_experiment_3()
+        console.print("Готово!")
+        print()
+
+    experiments = ExperimentCreator(output_dir='/')
+
+######## ВИВІД РЕЗУЛЬТАТІВ
+def show_experiment_results():
+    return
+
 @app.command(short_help='налаштування та запуск експериментів')
 def experiment_mode():
     console.print(MAIN_MENU[2])
     experiments = ExperimentCreator(output_dir='/')
-    experiments.run_all()
+
+    console.print("Експеримент 1....")
+    experiments.run_experiment_1()
+    console.print("Готово!")
+
+    console.print("Експеримент 2....")
+    experiments.run_experiment_2()
+    console.print("Готово!")
+
+    console.print("Експеримент 3....")
+    experiments.run_experiment_3()
+    console.print("Готово!")
+
+
+######################### ІНДИВІДУАЛЬНА ЗАДАЧА
+######## ОТРИМАННЯ ДАНИХ
+def input_data():
+    return
+def generate_data():
+    return
+def read_data():
+    return
+######## ПОКАЗ ТА ЗБЕРЕЖЕННЯ РЕЗУЛЬТАТІВ
+def show_task_results():
+    return
+######## РОЗВ'ЯЗОК
+def solve_task():
+    return
+
+@app.command(short_help="налаштування та розв'язання індивідуальної задачі")
+def task_mode():
+    console.print(MAIN_MENU[1])
+
+
+######################### ГОЛОВНЕ МЕНЮ
+@app.command(short_help="налаштування та розв'язання індивідуальної задачі")
+def start():
+    console.print(MAIN_MENU[0])
 
 
 if __name__ == "__main__":
