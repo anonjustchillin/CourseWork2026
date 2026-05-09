@@ -42,7 +42,7 @@ class GreedyAlgorithm:
                 self.budget -= self.k[i][t]
                 if sum(self.b) <= sum(self.a):
                     if sum(self.b) < sum(self.a):
-                        _, self.b, self.c = to_canonical_form(self.a, self.b, self.c)
+                        self.b, self.c = to_canonical_form(self.a, self.b, self.c)
                     x = calculate_vam(self.a, self.b, self.c)
 
                     scenario_cost = sum(
