@@ -72,8 +72,8 @@ class GeneticAlgorithm:
             for t in range(self.q)
         )
 
-        a_can, b_can, c_can = to_canonical_form(a_modified, self.b, self.c)
-        x = calculate_vam(a_can, b_can, c_can)
+        b_can, c_can = to_canonical_form(a_modified, self.b, self.c)
+        x = calculate_vam(a_modified, b_can, c_can)
         transport_cost = calculate_transport_cost(x, c_can)
 
         individual.fitness = scenario_cost + transport_cost
