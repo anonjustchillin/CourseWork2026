@@ -35,7 +35,7 @@ class GreedyAlgorithm:
 
         y = [[0] * self.q for _ in range(self.m)]
 
-        for i, t in E_desc.items():
+        for efficiency, (i, t) in E_desc.items():
             if 0 in y[i] and self.k[i][t] <= self.budget:
                 y[i][t] = 1
                 self.a[i] += self.delta_a[i][t]
