@@ -25,17 +25,13 @@ class GreedyAlgorithm:
         list of lists: Матриця розподілу ресурсів x (план перевезень).
         list of lists: Матриця бінарних змін y (обрані сценарії розширення виробництва).
         """
-        E = {}
-        for i in range(self.m):
-            for t in range(self.q):
-                E_value = self.delta_a[i][t]/self.k[i][t]
-                E[E_value] = [i, t]
-
-        E_desc = {k: v for k, v in sorted(E.items(), key=lambda item: item[0], reverse=True)}
-
+        E = sorted(
+            [(self.delta_a[i][t] / self.k[i][t], i, t) for i in range(self.m) for t in range(self.q)],
+            reverse=True
+        )
         y = [[0] * self.q for _ in range(self.m)]
 
-        for i, t in E_desc.items():
+        for _, i, t in E:
             if 0 in y[i] and self.k[i][t] <= self.budget:
                 y[i][t] = 1
                 self.a[i] += self.delta_a[i][t]
@@ -51,7 +47,8 @@ class GreedyAlgorithm:
                         for t in range(self.q)
                     )
                     transport_cost = calculate_transport_cost(x, self.c)
-                    z = scenario_cost + transport_cost
+                    #z = scenario_cost + transport_cost
+                    z = transport_cost
 
                     return x, y, z
 

@@ -16,6 +16,9 @@ def reanimate_chromosome(y, a, b, delta_a, k, budget):
     Повертає:
     tuple: (y, bool) — оновлена хромосома та ознака життєздатності.
     """
+    m = len(y)
+    q = len(y[0])
+
     while _calculate_total_cost(y, k) > budget:
         active_scenarios = _get_active_scenarios(y)
         if not active_scenarios:
@@ -31,7 +34,11 @@ def reanimate_chromosome(y, a, b, delta_a, k, budget):
 
         y[i][t] = 0
 
-    total_capacity = sum(a) + sum(y_it*delta_a_it for y_it,delta_a_it in zip(y, delta_a))
+    sum_a = sum(a)
+    y_delta_a = sum(y[i][t] * delta_a[i][t] for t in range(q) for i in range(m))
+    total_capacity = sum_a+y_delta_a
+    #print(f'{sum_a}+{y_delta_a}={total_capacity}')
+    #print(sum(b))
     demand_is_covered = sum(b) < total_capacity
 
     return y, demand_is_covered

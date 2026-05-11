@@ -34,10 +34,10 @@ class ExperimentCreator:
         self.v_scale = params_3["v_scale"]
         self.K_3 = params_3["K"]
 
-        self.pop_size = 20
+        self.pop_size = 2
         self.elite_percent = 0.5
         self.mutation_rate = 0.5
-        self.max_stagnation = 15
+        self.max_stagnation = 5
 
         self.time_start = 0
         self.time_elapsed = 0
@@ -52,6 +52,7 @@ class ExperimentCreator:
         self.time_elapsed = time_end - self.time_start
 
     def run_experiment_1(self, r_class_name="R2", b_class_name="B2"):
+        print('Експеримент 1 !!!!')
         def trial(r_class_name, b_class_name, s_class_name):
             """
             Параметри:
@@ -65,10 +66,13 @@ class ExperimentCreator:
 
             curr_task = TaskGenerator()
             curr_task_data = curr_task.generate(r_class_name, b_class_name, s_class_name=s_class_name)
+            print('A task was generated')
+            print(curr_task_data)
 
             record_log = []
             for k in range(1, self.fixed_generations+1):
-                curr_solution = GeneticAlgorithm(curr_task_data, self.pop_size, self.mutation_rate, self.elite_percent, np.inf)
+                print(f'k={k}')
+                curr_solution = GeneticAlgorithm(curr_task_data, self.pop_size, self.mutation_rate, self.elite_percent, self.max_stagnation)
                 _, curr_record = curr_solution.run(self.fixed_generations)
                 record_log.append(curr_record)
 
@@ -90,6 +94,7 @@ class ExperimentCreator:
 
         results = {}
         for l in ["S1", "S2", "S3"]:
+            print(f'l={l}')
             record_log = trial(r_class_name, b_class_name, l)
             plot_result(self.fixed_generations, record_log)
             results[l] = record_log
@@ -97,6 +102,7 @@ class ExperimentCreator:
         return results
 
     def run_experiment_2(self):
+        print('Експеримент 2 !!!!')
         def plot_result(data, class_names, name=''):
             x_classes = [class_name[0]+"-"+class_name[1] for class_name in class_names]
             x = len(x_classes)
@@ -142,12 +148,15 @@ class ExperimentCreator:
         results = {}
 
         for class_name in class_names:
+            print(class_name)
             r_class_name, b_class_name = class_name
             results, results_k = {i: [] for i in self.pop_size_list}
             for k in range(1, K+1):
+                print(f'k={k}')
                 curr_task = TaskGenerator()
                 curr_task_data = curr_task.generate(r_class_name, b_class_name, m=m, n=n, q=q)
                 for pop_size_i in self.pop_size_list:
+                    print(f'pop_size={pop_size_i}')
                     curr_solution = GeneticAlgorithm(curr_task_data, pop_size_i, self.mutation_rate, self.elite_percent, self.max_stagnation)
                     best_res, _ = curr_solution.run()
                     results_k[pop_size_i].append(best_res.fitness)
@@ -160,6 +169,7 @@ class ExperimentCreator:
         return
 
     def run_experiment_3(self, r_class_name="R2", b_class_name="B2"):
+        print('Експеримент 3 !!!!')
         def plot_result(x, y1, y2, y_name='', name=''):
             plt.plot(x, y1, label='Жадібний алгоритм')
             plt.plot(x, y2, label='Генетичний алгоритм')
@@ -194,6 +204,7 @@ class ExperimentCreator:
         genetic_results = []
 
         for v in self.v_scale:
+            print(f'v={v}')
             m = m*v
             n = n*v
             q = q*v
@@ -205,6 +216,7 @@ class ExperimentCreator:
             genetic_results_k = []
 
             for k in range(1, K+1):
+                print(f'k={k}')
                 curr_task = TaskGenerator()
                 curr_task_data = curr_task.generate(r_class_name, b_class_name, m=m, n=n, q=q)
 
@@ -216,22 +228,24 @@ class ExperimentCreator:
 
                 greedy_results_k.append(greedy_res)
 
-                self.start_time()
-                genetic_algo = GeneticAlgorithm(curr_task_data, self.pop_size, self.mutation_rate, self.elite_percent, self.max_stagnation)
-                best_res, _ = genetic_algo.run()
-                self.end_time()
-                genetic_time_k.append(self.time_elapsed)
+                if greedy_res is None:
+                    print('NONE!!!!')
 
-                genetic_results_k.append(best_res.fitness)
+                #self.start_time()
+                #genetic_algo = GeneticAlgorithm(curr_task_data, self.pop_size, self.mutation_rate, self.elite_percent, self.max_stagnation)
+                #best_res, _ = genetic_algo.run()
+                #self.end_time()
+                #genetic_time_k.append(self.time_elapsed)
+                #genetic_results_k.append(best_res.fitness)
 
-            greedy_time.append(sum(greedy_time_k)/K)
-            genetic_time.append(sum(genetic_time_k)/K)
+            #greedy_time.append(sum(greedy_time_k)/K)
+            #genetic_time.append(sum(genetic_time_k)/K)
 
-            greedy_results.append(sum(greedy_results_k)/K)
-            genetic_results.append(sum(genetic_results_k)/K)
+            #greedy_results.append(sum(greedy_results_k)/K)
+            #genetic_results.append(sum(genetic_results_k)/K)
 
-            plot_result(self.v_scale, greedy_time, genetic_time, y_name='час роботи')
-            plot_result(self.v_scale, greedy_results, genetic_results, y_name='точність')
+            #plot_result(self.v_scale, greedy_time, genetic_time, y_name='час роботи')
+            #plot_result(self.v_scale, greedy_results, genetic_results, y_name='точність')
 
 
         return

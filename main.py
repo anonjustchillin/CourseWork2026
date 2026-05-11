@@ -3,6 +3,8 @@ from rich.console import Console
 from rich.table import Table
 from experiments import *
 from experiments.experiment_creator import ExperimentCreator
+from genetic_algorithm.genetic_algo import GeneticAlgorithm
+from greedy_algorithm.greedy_algo import GreedyAlgorithm
 
 console = Console()
 app = typer.Typer()
@@ -107,14 +109,6 @@ def experiment_mode():
     experiments.run_experiment_1()
     console.print("Готово!")
 
-    console.print("Експеримент 2....")
-    experiments.run_experiment_2()
-    console.print("Готово!")
-
-    console.print("Експеримент 3....")
-    experiments.run_experiment_3()
-    console.print("Готово!")
-
 
 ######################### ІНДИВІДУАЛЬНА ЗАДАЧА
 ######## ОТРИМАННЯ ДАНИХ
@@ -128,12 +122,42 @@ def read_data():
 def show_task_results():
     return
 ######## РОЗВ'ЯЗОК
-def solve_task():
+def solve_task(task_data, pop_size=2, mutation_rate=0.5, elite_percent=0.5, max_stagnation=5):
+    print_title('Жадібний алгоритм')
+    greedy_algo = GreedyAlgorithm(task_data)
+    greedy_res = greedy_algo.run()
+    print_success(f"Значення ЦФ: {greedy_res}")
+
+    print()
+
+    #print_title('Генетичний алгоритм')
+    #genetic_algo = GeneticAlgorithm(task_data, pop_size, mutation_rate, elite_percent, max_stagnation)
+    #best_res, _ = genetic_algo.run()
+    #print_success(f"Значення ЦФ: {best_res.fitness}")
+
     return
 
 @app.command(short_help="налаштування та розв'язання індивідуальної задачі")
 def task_mode():
     console.print(MAIN_MENU[1])
+    data = {
+            "a": [80,90,60],
+            "b": [80,110,70,90],
+            "c": [[15, 22, 18, 25],
+                  [20, 12, 10, 18],
+                  [28, 20, 15, 12]],
+            "delta_a": [[40, 90],
+                        [30, 70],
+                        [50, 100]],
+            "k": [[250, 550],
+                  [180, 450],
+                  [320, 600]],
+            "budget": 800,
+            "m": 3,
+            "n": 4,
+            "q": 2
+    }
+    solve_task(data)
 
 
 ######################### ГОЛОВНЕ МЕНЮ

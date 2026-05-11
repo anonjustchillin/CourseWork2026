@@ -84,10 +84,14 @@ class GeneticAlgorithm:
         population = []
 
         while len(population) < self.pop_size:
+            #print('in while len(population) < self.pop_size')
+            #print(f'len of population: {len(population)}')
             y = self._generate_chromosome()
+            #print(y)
             y, is_viable = reanimate_chromosome(
                 y, self.a, self.b, self.delta_a, self.k, self.budget
             )
+            #print(is_viable)
             if not is_viable:
                 continue
 
@@ -175,10 +179,13 @@ class GeneticAlgorithm:
         stagnation_counter = 0
         generation = 0
 
+        print('in run func')
+
         if fixed_generations is None:
             print(f"Початковий рекорд: {best.fitness:.2f}")
 
         while True:
+            print('in while True')
             if fixed_generations is not None:
                 if generation >= fixed_generations: break
             elif stagnation_counter >= self.max_stagnation:
@@ -194,6 +201,7 @@ class GeneticAlgorithm:
             counter = 0
 
             while counter < self.pop_size - records:
+                print('in while counter < self.pop_size - records')
                 p1, p2 = random.sample(parent_pool, 2)
 
                 child1_y, child2_y = crossover(p1.chromosome, p2.chromosome)
@@ -202,6 +210,7 @@ class GeneticAlgorithm:
                 child2_y = mutate(child2_y, self.mutation_rate, self.q)
 
                 for child_y in [child1_y, child2_y]:
+                    print('in for loop with child_y')
                     child_y, is_viable = reanimate_chromosome(
                         child_y, self.a, self.b, self.delta_a, self.k, self.budget
                     )
