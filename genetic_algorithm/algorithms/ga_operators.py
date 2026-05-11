@@ -19,29 +19,85 @@ def reanimate_chromosome(y, a, b, delta_a, k, budget):
     m = len(y)
     q = len(y[0])
 
-    while _calculate_total_cost(y, k) > budget:
-        active_scenarios = _get_active_scenarios(y)
-        if not active_scenarios:
-            return y, False
+    total_demand = sum(b)
+    base_capacity = sum(a)
 
-        efficiencies = [
-            (delta_a[i][t] / k[i][t], i, t)
-            for i, t in active_scenarios
-        ]
-        min_efficiency = min(efficiencies, key=lambda e: e[0])
-        candidates = [e for e in efficiencies if e[0] == min_efficiency[0]]
-        _, i, t = random.choice(candidates)
+    all_scenarios = []
+    for i in range(m):
+        for t in range(q):
+            efficiency = delta_a[i][t] / k[i][t]
+            all_scenarios.append((efficiency, i, t, delta_a[i][t], k[i][t]))
 
-        y[i][t] = 0
+    all_scenarios.sort(reverse=True, key=lambda x: x[0])
 
-    sum_a = sum(a)
-    y_delta_a = sum(y[i][t] * delta_a[i][t] for t in range(q) for i in range(m))
-    total_capacity = sum_a+y_delta_a
-    #print(f'{sum_a}+{y_delta_a}={total_capacity}')
-    #print(sum(b))
-    demand_is_covered = sum(b) < total_capacity
+    current_cost = _calculate_total_cost(y, k)
+    current_expansion = _calculate_total_expansion(y, delta_a)
 
-    return y, demand_is_covered
+    while current_cost > budget:
+        active = _get_active_scenarios(y)
+        if not active:
+            break
+
+        least_efficient = None
+        min_eff = float('inf')
+        for i, t in active:
+            eff = delta_a[i][t] / k[i][t]
+            if eff < min_eff:
+                min_eff = eff
+                least_efficient = (i, t)
+
+        if least_efficient:
+            i, t = least_efficient
+            y[i][t] = 0
+            current_cost -= k[i][t]
+            current_expansion -= delta_a[i][t]
+
+    while base_capacity + current_expansion < total_demand:
+        best_scenario = None
+        best_eff = -1
+
+        for i in range(m):
+            if sum(y[i]) > 0:
+                continue
+            for t in range(q):
+                if current_cost + k[i][t] <= budget:
+                    eff = delta_a[i][t] / k[i][t]
+                    if eff > best_eff:
+                        best_eff = eff
+                        best_scenario = (i, t)
+
+        if best_scenario is None:
+            break
+
+        i, t = best_scenario
+        y[i][t] = 1
+        current_cost += k[i][t]
+        current_expansion += delta_a[i][t]
+
+    total_capacity = base_capacity + current_expansion
+    demand_is_covered = total_demand <= total_capacity
+    within_budget = current_cost <= budget
+
+    return y, (demand_is_covered and within_budget)
+
+
+def _calculate_total_expansion(y, delta_a):
+    """Розраховує сумарний приріст потужності."""
+    return sum(
+        y[i][t] * delta_a[i][t]
+        for i in range(len(y))
+        for t in range(len(y[i]))
+    )
+
+
+def _get_inactive_scenarios(y):
+    """Повертає список пар (i, t) для постачальників без активного сценарію."""
+    result = []
+    for i in range(len(y)):
+        if sum(y[i]) == 0:
+            for t in range(len(y[i])):
+                result.append((i, t))
+    return result
 
 
 def crossover(parent1_y, parent2_y):
