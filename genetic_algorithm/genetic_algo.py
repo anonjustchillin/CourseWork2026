@@ -114,6 +114,9 @@ class GeneticAlgorithm:
         Повертає:
         list: Батьківський пул розміром pop_size // 2.
         """
+        if self.pop_size == self.tournament_size:
+            return population
+
         shuffled = population[:]
         random.shuffle(shuffled)
 
@@ -174,18 +177,20 @@ class GeneticAlgorithm:
         population = self._initialize_population()
         population.sort()
 
+        #print(population)
+
         best = population[0]
         history = [best.fitness]
         stagnation_counter = 0
         generation = 0
 
-        print('in run func')
+        #print('in run func')
 
         if fixed_generations is None:
             print(f"Початковий рекорд: {best.fitness:.2f}")
 
         while True:
-            print('in while True')
+            #print('in while True')
             if fixed_generations is not None:
                 if generation >= fixed_generations: break
             elif stagnation_counter >= self.max_stagnation:
@@ -195,14 +200,15 @@ class GeneticAlgorithm:
 
             records = round((self.elite_percent * self.pop_size) / 2) * 2
             parent_pool = self._tournament_selection(population)
+            #print(parent_pool)
 
             new_population = []
 
             counter = 0
 
             while counter < self.pop_size - records:
-                print('in while counter < self.pop_size - records')
-                p1, p2 = random.sample(parent_pool, 2)
+                #print('in while counter < self.pop_size - records')
+                p1, p2 = random.sample(parent_pool, k=2)
 
                 child1_y, child2_y = crossover(p1.chromosome, p2.chromosome)
 
@@ -210,7 +216,7 @@ class GeneticAlgorithm:
                 child2_y = mutate(child2_y, self.mutation_rate, self.q)
 
                 for child_y in [child1_y, child2_y]:
-                    print('in for loop with child_y')
+                    #print('in for loop with child_y')
                     child_y, is_viable = reanimate_chromosome(
                         child_y, self.a, self.b, self.delta_a, self.k, self.budget
                     )

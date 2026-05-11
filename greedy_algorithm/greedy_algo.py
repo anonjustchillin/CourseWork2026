@@ -47,8 +47,7 @@ class GreedyAlgorithm:
                         for t in range(self.q)
                     )
                     transport_cost = calculate_transport_cost(x, self.c)
-                    #z = scenario_cost + transport_cost
-                    z = transport_cost
+                    z = scenario_cost + transport_cost
 
                     return x, y, z
 
