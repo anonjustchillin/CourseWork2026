@@ -311,12 +311,31 @@ def setup_task(choice):
 def show_task(choice):
     ########## !!!!!!!!!!!!!!
     print_title(MAIN_MENU[choice])
+
+    if len(DATA) == 0 and len(GA_DATA) == 0:
+        print_error(NO_DATA)
+        start()
+    else:
+        print_subtitle('ПАРАМЕТРИ ЗАДАЧІ')
+        for key, value in DATA.items():
+            print(f'{key} = {value}')
+        for key, value in GA_DATA.items():
+            print(f'{key} = {value}')
+        print()
+        print_options(RETURN_TO_MAIN)
+        choice = menu_input(RETURN_TO_MAIN)
+        switch_menu_page(choice, True)
     return
 
 ######################### ВИВІД РЕЗУЛЬТАТІВ ЗАДАЧІ
 ######## ПОКАЗ ТА ЗБЕРЕЖЕННЯ РЕЗУЛЬТАТІВ
 def show_task_results(choice):
     print_comment(MAIN_MENU[choice])
+
+    print()
+    print_options(RETURN_TO_MAIN)
+    choice = menu_input(RETURN_TO_MAIN)
+    switch_menu_page(choice, True)
     return
 
 ######################### ЕКСПЕРИМЕНТИ
