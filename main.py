@@ -23,7 +23,7 @@ EXP_DATA_3 = {}
 EXP_GA_DATA = {}
 
 DEFAULT_FOLDER = 'output'
-OUTPUT_FILE = ''
+OUTPUT_DIR = ''
 
 
 def switch_menu_page(choice, short=False):
@@ -458,7 +458,7 @@ def setup_experiments(exp_list):
         return
 
     def get_output_dir():
-        global OUTPUT_FILE
+        global OUTPUT_DIR
         while True:
             try:
                 data_path = input(f'Введіть назву папки для збереження даних: ')
@@ -469,7 +469,7 @@ def setup_experiments(exp_list):
                     break
             except ValueError:
                 print_error(ERROR_MESS)
-        OUTPUT_FILE = data_path
+        OUTPUT_DIR = data_path
         return
 
     if exp_list[0]: setup_1()
@@ -479,7 +479,7 @@ def setup_experiments(exp_list):
     get_output_dir()
 
 ######## ЗАПУСК ЕКСПЕРИМЕНТУ/ІВ
-def run_experiments(exp_list):
+def run_experiments(exp_list, default_params):
     def run_1(experiments):
         print_title("Експеримент 1")
         print_subtitle(EXPERIMENT_QUESTION)
@@ -497,41 +497,42 @@ def run_experiments(exp_list):
         print_success("Готово!")
         print()
 
-    setup_experiments(exp_list)
+    if not default_params:
+        setup_experiments(exp_list)
 
-    if len(EXP_DATA_2) == 0 and len(EXP_DATA_3) == 0:
-        experiments = ExperimentCreator(output_dir=OUTPUT_FILE,
+    if len(EXP_DATA_1) != 0 and len(EXP_DATA_2) == 0 and len(EXP_DATA_3) == 0:
+        experiments = ExperimentCreator(output_dir=OUTPUT_DIR,
                                         params_1=EXP_DATA_1,
                                         pop_size=EXP_GA_DATA["pop_size"],
                                         elite_percent=EXP_GA_DATA["elite_percent"],
                                         mutation_rate=EXP_GA_DATA["mutation_rate"],
                                         max_stagnation=EXP_GA_DATA["max_stagnation"])
-    elif len(EXP_DATA_1) == 0 and len(EXP_DATA_3) == 0:
-        experiments = ExperimentCreator(output_dir=OUTPUT_FILE,
+    elif len(EXP_DATA_1) == 0 and len(EXP_DATA_2) != 0 and len(EXP_DATA_3) == 0:
+        experiments = ExperimentCreator(output_dir=OUTPUT_DIR,
                                         params_2=EXP_DATA_2,
                                         pop_size=EXP_GA_DATA["pop_size"],
                                         elite_percent=EXP_GA_DATA["elite_percent"],
                                         mutation_rate=EXP_GA_DATA["mutation_rate"],
                                         max_stagnation=EXP_GA_DATA["max_stagnation"])
-    elif len(EXP_DATA_1) == 0 and len(EXP_DATA_2) == 0:
-        experiments = ExperimentCreator(output_dir=OUTPUT_FILE,
+    elif len(EXP_DATA_1) == 0 and len(EXP_DATA_2) == 0 and len(EXP_DATA_3) != 0:
+        experiments = ExperimentCreator(output_dir=OUTPUT_DIR,
                                         params_3=EXP_DATA_3,
                                         pop_size=EXP_GA_DATA["pop_size"],
                                         elite_percent=EXP_GA_DATA["elite_percent"],
                                         mutation_rate=EXP_GA_DATA["mutation_rate"],
                                         max_stagnation=EXP_GA_DATA["max_stagnation"])
     elif len(EXP_DATA_1) != 0 and len(EXP_DATA_2) != 0 and len(EXP_DATA_3) != 0:
-        experiments = ExperimentCreator(output_dir=OUTPUT_FILE,
-                                    params_1=EXP_DATA_1,
-                                    params_2=EXP_DATA_2,
-                                    params_3=EXP_DATA_3,
-                                    pop_size=EXP_GA_DATA["pop_size"],
-                                    elite_percent=EXP_GA_DATA["elite_percent"],
-                                    mutation_rate=EXP_GA_DATA["mutation_rate"],
-                                    max_stagnation=EXP_GA_DATA["max_stagnation"])
+        experiments = ExperimentCreator(output_dir=OUTPUT_DIR,
+                                        params_1=EXP_DATA_1,
+                                        params_2=EXP_DATA_2,
+                                        params_3=EXP_DATA_3,
+                                        pop_size=EXP_GA_DATA["pop_size"],
+                                        elite_percent=EXP_GA_DATA["elite_percent"],
+                                        mutation_rate=EXP_GA_DATA["mutation_rate"],
+                                        max_stagnation=EXP_GA_DATA["max_stagnation"])
     else:
-        print_error(ERROR_MESS)
-        exit()
+        print_comment('параметри за замовчуванням')
+        experiments = ExperimentCreator(output_dir=OUTPUT_DIR)
 
     if exp_list[0]: run_1(experiments)
     if exp_list[1]: run_2(experiments)
@@ -556,6 +557,7 @@ def experiment_mode(choice):
     exp_choice = menu_input(EXPERIMENT_DESC)
 
     exp_list = [False, False, False]
+    default_params = False
 
     if exp_choice == 0:
         exp_list[0] = True
@@ -568,7 +570,7 @@ def experiment_mode(choice):
         exp_list[1] = True
         exp_list[2] = True
 
-    run_experiments(exp_list)
+    run_experiments(exp_list, default_params)
     show_experiment_results()
 
     print_options(RETURN_TO_MAIN)
