@@ -3,12 +3,12 @@ from rich.console import Console
 from rich.table import Table
 from all_text import *
 from config import *
-from experiments import *
 from experiments.experiment_creator import ExperimentCreator
 from genetic_algorithm.genetic_algo import GeneticAlgorithm
 from greedy_algorithm.greedy_algo import GreedyAlgorithm
 import random
 import os
+import json
 
 console = Console()
 app = typer.Typer()
@@ -21,25 +21,33 @@ EXP_DATA_1 = {}
 EXP_DATA_2 = {}
 EXP_DATA_3 = {}
 EXP_GA_DATA = {}
-OUTPUT_DIR = '/CourseWork2026/output'
+
+DEFAULT_FOLDER = '/CourseWork2026/output'
+OUTPUT_FILE = ''
 
 
-def switch_menu_page(choice):
+def switch_menu_page(choice, short=False):
     global CURR_MENU
     CURR_MENU = choice
 
-    if CURR_MENU == 0:
-        setup_task(CURR_MENU)
-    elif CURR_MENU == 1:
-        task_mode(CURR_MENU)
-    elif CURR_MENU == 2:
-        show_task(CURR_MENU)
-    elif CURR_MENU == 3:
-        show_task_results(CURR_MENU)
-    elif CURR_MENU == 4:
-        experiment_mode(CURR_MENU)
+    if not short:
+        if CURR_MENU == 0:
+            setup_task(CURR_MENU)
+        elif CURR_MENU == 1:
+            task_mode(CURR_MENU)
+        elif CURR_MENU == 2:
+            show_task(CURR_MENU)
+        elif CURR_MENU == 3:
+            show_task_results(CURR_MENU)
+        elif CURR_MENU == 4:
+            experiment_mode(CURR_MENU)
+        else:
+            exit()
     else:
-        return
+        if CURR_MENU == 0:
+            start()
+        else:
+            exit()
 
 def switch_data_menu_page(choice):
     if choice == 0:
@@ -71,9 +79,6 @@ def menu_input(menu_list=MAIN_MENU):
 @app.command(short_help='інформація про авторів')
 def about():
     console.print(INFO)
-
-def cut_str(text: str):
-    return " ".join(text.split())
 
 ######################### ВИВЕДЕННЯ ТЕКСТУ НА КОНСОЛЬ
 def print_comment(text: str):
@@ -222,7 +227,7 @@ def read_data():
     def get_input():
         while True:
             try:
-                data_path = input(f'Введіть шлях до файлу з даними: ')
+                data_path = input(f'Введіть шлях до json-файлу з даними: ')
                 if os.path.exists(data_path):
                     break
                 else:
@@ -231,16 +236,74 @@ def read_data():
                 print_error(NO_FILE)
         return data_path
 
-    def read_data():
-        global DATA
+    global DATA, GA_PARAMS
 
-    read_data()
+    data_path = get_input()
+
+    with open(data_path, 'r') as file:
+        try:
+            data = json.load(file)
+            data_keys = ["m", "n", "q", "a", "b", "c", "delta_a", "k", "budget"]
+            ga_data_keys = ["pop_size", "mutation_rate", "elite_percent", "max_stagnation"]
+
+            for key in data_keys:
+                if key == "m" or key == "n" or key == "q":
+                    if data[key] <= 0:
+                        print_error(INCORRECT_DATA)
+                        start()
+                elif key == "c":
+                    if len(data[key]) != data["m"]:
+                        print_error(INCORRECT_DATA)
+                        start()
+                    elif len(data[key][0]) != data["n"]:
+                        print_error(INCORRECT_DATA)
+                        start()
+                elif key == "delta_a":
+                    if len(data[key]) != data["m"]:
+                        print_error(INCORRECT_DATA)
+                        start()
+                    elif len(data[key][0]) != data["q"]:
+                        print_error(INCORRECT_DATA)
+                        start()
+                elif key == "k":
+                    if len(data[key]) != data["m"]:
+                        print_error(INCORRECT_DATA)
+                        start()
+                    elif len(data[key][0]) != data["q"]:
+                        print_error(INCORRECT_DATA)
+                        start()
+                else:
+                    DATA[key] = data[key]
+
+            for key in ga_data_keys:
+                if key == "pop_size":
+                    if data[key] % 2 != 0:
+                        print_error(INCORRECT_DATA)
+                        start()
+                GA_DATA[key] = data[key]
+
+        except json.decoder.JSONDecodeError:
+            print_error(NO_DATA)
+
     print()
     return
 
 def setup_task(choice):
-    ########## !!!!!!!!!!!!!!
     print_title(MAIN_MENU[choice])
+
+    print_options(DATA_MENU)
+    choice = menu_input(DATA_MENU)
+    print()
+    switch_data_menu_page(choice)
+
+    print_success("Дані було збережено")
+    print()
+
+    print_options(RETURN_TO_MAIN)
+    choice = menu_input(DATA_MENU)
+    print()
+    switch_menu_page(choice, True)
+
     return
 
 
@@ -353,17 +416,18 @@ def setup_experiments(exp_list):
         return
 
     def get_output_dir():
-        global OUTPUT_DIR
+        global OUTPUT_FILE
         while True:
             try:
-                data_path = input(f'Введіть шлях для збереження даних: ')
+                data_path = input(f'Введіть назву файлу для збереження даних: ')
+                data_path = os.path.join(DEFAULT_FOLDER, data_path)
                 if not os.path.exists(data_path):
                     f = open(data_path, "x")
                     f.close()
                 break
             except ValueError:
                 print_error(ERROR_MESS)
-        OUTPUT_DIR = data_path
+        OUTPUT_FILE = data_path
         return
 
     if exp_list[0]: setup_1()
@@ -393,7 +457,7 @@ def run_experiments(exp_list):
 
     setup_experiments(exp_list)
 
-    experiments = ExperimentCreator(output_dir=OUTPUT_DIR,
+    experiments = ExperimentCreator(output_dir=OUTPUT_FILE,
                                     params_1=EXP_DATA_1,
                                     params_2=EXP_DATA_1,
                                     params_3=EXP_DATA_3,
@@ -438,7 +502,7 @@ def experiment_mode(choice):
 
     print_options(RETURN_TO_MAIN)
     choice = menu_input(RETURN_TO_MAIN)
-    switch_menu_page(choice)
+    switch_menu_page(choice, True)
 
 
 ######################### ІНДИВІДУАЛЬНА ЗАДАЧА
@@ -482,7 +546,7 @@ def task_mode(choice):
 
     print_options(RETURN_TO_MAIN)
     choice = menu_input(RETURN_TO_MAIN)
-    switch_menu_page(choice)
+    switch_menu_page(choice, True)
 
 
 ######################### ГОЛОВНЕ МЕНЮ
