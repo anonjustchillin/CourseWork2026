@@ -390,17 +390,17 @@ def setup_experiments(exp_list):
                         print_error(INCORRECT_DATA)
                         continue
                     break
-                EXP_DATA_2[key] = [0 for x in range(pop_size_count)]
+                EXP_DATA_2[key] = [0 for i in range(pop_size_count)]
                 for i in range(pop_size_count):
                     while True:
                         value = get_input(f'{key}[{i}] (парне число!) ')
                         if value%2 == 0:
                             break
-                    EXP_DATA_2[key][i] = value
+                    EXP_DATA_2[key][i] = int(value)
                 EXP_DATA_2[key].sort()
             else:
                 value = get_input(key)
-            EXP_DATA_2[key] = value
+                EXP_DATA_2[key] = value
 
         print()
         return
@@ -430,7 +430,7 @@ def setup_experiments(exp_list):
                 EXP_DATA_3[key].sort()
             else:
                 value = get_input(key)
-            EXP_DATA_3[key] = value
+                EXP_DATA_3[key] = value
 
         print()
         return
@@ -464,10 +464,11 @@ def setup_experiments(exp_list):
                 data_path = input(f'Введіть назву папки для збереження даних: ')
                 data_path = os.path.join(DEFAULT_FOLDER, data_path)
                 if not os.path.exists(data_path):
-                        print_error(ERROR_MESS)
+                    os.mkdir(data_path)
+                    break
                 else:
                     break
-            except ValueError:
+            except ValueError or PermissionError:
                 print_error(ERROR_MESS)
         OUTPUT_DIR = data_path
         return
@@ -488,6 +489,7 @@ def run_experiments(exp_list, default_params):
         print()
     def run_2(experiments):
         print_title("Експеримент 2")
+        print(EXP_DATA_2)
         experiments.run_experiment_2()
         print_success("Готово!")
         print()

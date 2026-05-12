@@ -73,12 +73,14 @@ class ExperimentCreator:
 
             curr_task = TaskGenerator()
             curr_task_data = curr_task.generate(r_class_name, b_class_name, s_class_name=s_class_name)
-            print('A task was generated')
-            print(curr_task_data)
+            #print('A task was generated')
+            #print(curr_task_data)
+
+            self.fixed_generations = int(self.fixed_generations)
 
             record_log = []
             for k in range(1, self.fixed_generations+1):
-                print(f'k={k}')
+                #print(f'k={k}')
                 curr_solution = GeneticAlgorithm(curr_task_data, self.pop_size, self.mutation_rate, self.elite_percent, self.max_stagnation)
                 _, curr_record = curr_solution.run(self.fixed_generations)
                 record_log.append(curr_record)
