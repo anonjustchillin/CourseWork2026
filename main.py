@@ -151,10 +151,70 @@ def input_data(getGA=True):
 
     return
 
-def generate_data():
+def generate_data(getGA=True):
+    def get_input(name):
+        while True:
+            try:
+                value = int(input(f'Введіть {name}: '))
+                break
+            except ValueError:
+                print_error(INCORRECT_DATA)
+        return value
+
+    def generate_basic():
+        global DATA
+
+        first_keys = ["budget", "m", "n", "q"]
+        other_keys_1d = ["a", "b"]
+        other_keys_2d = ["c", "delta_a", "k"]
+
+        for key in first_keys:
+            limit = get_input(f'максимальне значення для {key}')
+            value = random.randrange(1, limit)
+            DATA[key] = value
+
+        DATA["a"] = [0 for x in range(DATA["m"])]
+        DATA["b"] = [0 for x in range(DATA["n"])]
+        DATA["c"] = [[0] * DATA["n"] for i in range(DATA["m"])]
+        DATA["delta_a"] = [[0] * DATA["q"] for i in range(DATA["m"])]
+        DATA["k"] = [[0] * DATA["q"] for i in range(DATA["m"])]
+
+        for key in other_keys_1d:
+            limit = get_input(f'максимальне значення для {key}')
+            for i in range(len(DATA[key])):
+                value = random.randrange(1, limit)
+                DATA[key][i] = value
+
+        for key in other_keys_2d:
+            limit = get_input(f'максимальне значення для {key}')
+            for i in range(len(DATA[key])):
+                for j in range(len(DATA[key][0])):
+                    value = random.randrange(1, limit)
+                    DATA[key][i][j] = value
+
+        return
+
+    def generate_ga():
+        global GA_DATA
+        for key, value in GA_PARAMS.items():
+            if key == 'pop_size':
+                while True:
+                    value = get_input(key+' (парне число!) ')
+                    if value%2 == 0:
+                        break
+            else:
+                value = get_input(key)
+            GA_DATA[key] = value
+        return
+
+    generate_basic()
+    if getGA: generate_ga()
+
     return
 
 def read_data():
+
+
     return
 
 def setup_task(choice):
