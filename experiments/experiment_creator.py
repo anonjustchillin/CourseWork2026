@@ -226,7 +226,7 @@ class ExperimentCreator:
                 self.end_time()
                 greedy_time_k.append(self.time_elapsed)
 
-                greedy_results_k.append(greedy_res)
+                greedy_results_k.append(greedy_res[-1])
 
                 if greedy_res is None:
                     print('NONE!!!!')
@@ -238,10 +238,10 @@ class ExperimentCreator:
                 #genetic_time_k.append(self.time_elapsed)
                 #genetic_results_k.append(best_res.fitness)
 
-            #greedy_time.append(sum(greedy_time_k)/K)
+            greedy_time.append(sum(greedy_time_k)/K)
             #genetic_time.append(sum(genetic_time_k)/K)
 
-            #greedy_results.append(sum(greedy_results_k)/K)
+            greedy_results.append(sum(greedy_results_k)/K)
             #genetic_results.append(sum(genetic_results_k)/K)
 
             #plot_result(self.v_scale, greedy_time, genetic_time, y_name='час роботи')
