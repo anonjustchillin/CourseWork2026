@@ -22,7 +22,7 @@ EXP_DATA_2 = {}
 EXP_DATA_3 = {}
 EXP_GA_DATA = {}
 
-DEFAULT_FOLDER = '/CourseWork2026/output'
+DEFAULT_FOLDER = '\CourseWork2026\output'
 OUTPUT_FILE = ''
 
 
@@ -68,7 +68,7 @@ def menu_input(menu_list=MAIN_MENU):
             choice = int(input(CHOICE_STR))
             choice -= 1
             if choice not in range(len(menu_list)):
-                raise ValueError
+                print_error(ERROR_MESS)
             else:
                 break
         except ValueError:
@@ -228,12 +228,13 @@ def read_data():
         while True:
             try:
                 data_path = input(f'Введіть шлях до json-файлу з даними: ')
-                if os.path.exists(data_path):
-                    break
-                else:
-                    raise FileNotFoundError
+                if not os.path.exists(data_path):
+                    print_error(NO_FILE)
+                    continue
+                break
             except ValueError or FileNotFoundError:
                 print_error(NO_FILE)
+
         return data_path
 
     global DATA, GA_PARAMS
@@ -330,7 +331,7 @@ def show_task(choice):
 ######################### ВИВІД РЕЗУЛЬТАТІВ ЗАДАЧІ
 ######## ПОКАЗ ТА ЗБЕРЕЖЕННЯ РЕЗУЛЬТАТІВ
 def show_task_results(choice):
-    print_comment(MAIN_MENU[choice])
+    print_title(MAIN_MENU[choice])
 
     print()
     print_options(RETURN_TO_MAIN)
@@ -381,6 +382,7 @@ def setup_experiments(exp_list):
                         if value%2 == 0:
                             break
                     EXP_DATA_2[key][i] = value
+                EXP_DATA_2[key].sort()
             else:
                 value = get_input(key)
             EXP_DATA_2[key] = value
@@ -410,6 +412,7 @@ def setup_experiments(exp_list):
                             continue
                         break
                     EXP_DATA_3[key][i] = value
+                EXP_DATA_3[key].sort()
             else:
                 value = get_input(key)
             EXP_DATA_3[key] = value
@@ -441,9 +444,14 @@ def setup_experiments(exp_list):
                 data_path = input(f'Введіть назву файлу для збереження даних: ')
                 data_path = os.path.join(DEFAULT_FOLDER, data_path)
                 if not os.path.exists(data_path):
-                    f = open(data_path, "x")
-                    f.close()
-                break
+                    try:
+                        f = open(data_path, "x")
+                        f.close()
+                        break
+                    except FileExistsError or FileNotFoundError:
+                        print_error(ERROR_MESS)
+                else:
+                    break
             except ValueError:
                 print_error(ERROR_MESS)
         OUTPUT_FILE = data_path
@@ -492,8 +500,11 @@ def run_experiments(exp_list):
 ######## ВИВІД РЕЗУЛЬТАТІВ
 def show_experiment_results():
     ########## !!!!!!!!!!!!!!
-    print_title('Experiment Results')
-    return
+    print_title('Результати експериментів')
+
+    print_options(RETURN_TO_MAIN)
+    choice = menu_input(RETURN_TO_MAIN)
+    switch_menu_page(choice, True)
 
 @app.command(short_help='налаштування та запуск експериментів')
 def experiment_mode(choice):
@@ -571,6 +582,7 @@ def task_mode(choice):
 ######################### ГОЛОВНЕ МЕНЮ
 @app.command(short_help="запуск програми")
 def start():
+    print()
     console.print(INFO)
     print_subtitle(TOPIC)
     print()
