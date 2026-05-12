@@ -2,15 +2,21 @@ import typer
 from rich.console import Console
 from rich.table import Table
 from all_text import *
+from config import *
 from experiments import *
 from experiments.experiment_creator import ExperimentCreator
 from genetic_algorithm.genetic_algo import GeneticAlgorithm
 from greedy_algorithm.greedy_algo import GreedyAlgorithm
+import random
+import os
 
 console = Console()
 app = typer.Typer()
 
 CURR_MENU = -1
+
+DATA = {}
+GA_DATA = {}
 
 def switch_menu_page(choice):
     global CURR_MENU
@@ -85,22 +91,85 @@ def print_options(menu_list=MAIN_MENU, title=True):
             print_blue(text)
 
 ######################### ВВЕСТИ ДАНІ ЗАДАЧІ
+######## ОТРИМАННЯ ДАНИХ
+def input_data(getGA=True):
+    def get_input(name):
+        while True:
+            try:
+                value = float(input(f'Введіть {name}: '))
+                break
+            except ValueError:
+                print_error(INCORRECT_DATA)
+        return value
+
+    def input_basic():
+        global DATA
+
+        first_keys = ["budget", "m", "n", "q"]
+        other_keys_1d = ["a", "b"]
+        other_keys_2d = ["c", "delta_a", "k"]
+
+
+        for key in first_keys:
+            value = get_input(key)
+            DATA[key] = value
+
+        DATA["a"] = [0 for x in range(DATA["m"])]
+        DATA["b"] = [0 for x in range(DATA["n"])]
+        DATA["c"] = [[0] * DATA["n"] for i in range(DATA["m"])]
+        DATA["delta_a"] = [[0] * DATA["q"] for i in range(DATA["m"])]
+        DATA["k"] = [[0] * DATA["q"] for i in range(DATA["m"])]
+
+        for key in other_keys_1d:
+            for i in range(len(DATA[key])):
+                value = get_input(key+f"[{i+1}]")
+                DATA[key][i] = value
+
+        for key in other_keys_2d:
+            for i in range(len(DATA[key])):
+                for j in range(len(DATA[key][0])):
+                    value = get_input(key+f"[{i+1}{j+1}]")
+                    DATA[key][i][j] = value
+
+        return
+
+    def input_ga():
+        global GA_DATA
+        for key, value in GA_PARAMS.items():
+            if key == 'pop_size':
+                while True:
+                    value = get_input(key+' (парне число!) ')
+                    if value%2 == 0:
+                        break
+            else:
+                value = get_input(key)
+            GA_DATA[key] = value
+        return
+
+    input_basic()
+    if getGA: input_ga()
+
+    return
+
+def generate_data():
+    return
+
+def read_data():
+    return
+
 def setup_task(choice):
+    ########## !!!!!!!!!!!!!!
     print_title(MAIN_MENU[choice])
     return
+
+
 ######################### ВИВІД ЗАДАЧІ
 def show_task(choice):
+    ########## !!!!!!!!!!!!!!
     print_title(MAIN_MENU[choice])
     return
 
 ######################### ВИВІД РЕЗУЛЬТАТІВ ЗАДАЧІ
-######## ОТРИМАННЯ ДАНИХ
-def input_data():
-    return
-def generate_data():
-    return
-def read_data():
-    return
 ######## ПОКАЗ ТА ЗБЕРЕЖЕННЯ РЕЗУЛЬТАТІВ
 def show_task_results(choice):
     print_comment(MAIN_MENU[choice])
@@ -164,6 +233,8 @@ def run_experiments(exp_list):
 
 ######## ВИВІД РЕЗУЛЬТАТІВ
 def show_experiment_results():
+    ########## !!!!!!!!!!!!!!
+    print_title('Experiment Results')
     return
 
 @app.command(short_help='налаштування та запуск експериментів')
@@ -197,7 +268,7 @@ def experiment_mode(choice):
 
 ######################### ІНДИВІДУАЛЬНА ЗАДАЧА
 ######## РОЗВ'ЯЗОК
-def solve_task(task_data, pop_size=2, mutation_rate=0.5, elite_percent=0.5, max_stagnation=5):
+def solve_task(task_data, ga_data):
     print_title('Жадібний алгоритм')
     greedy_algo = GreedyAlgorithm(task_data)
     greedy_res = greedy_algo.run()
@@ -207,7 +278,11 @@ def solve_task(task_data, pop_size=2, mutation_rate=0.5, elite_percent=0.5, max_
     print()
 
     print_title('Генетичний алгоритм')
-    genetic_algo = GeneticAlgorithm(task_data, pop_size, mutation_rate, elite_percent, max_stagnation)
+    genetic_algo = GeneticAlgorithm(task_data,
+                                    ga_data["pop_size"],
+                                    ga_data["mutation_rate"],
+                                    ga_data["elite_percent"],
+                                    ga_data["max_stagnation"])
     best_res, _ = genetic_algo.run()
     print_success(f"Обрані сценарії розширення: {best_res.chromosome}")
     print_success(f"Обсяг продукції: {best_res.transport_plan}")
@@ -225,24 +300,8 @@ def task_mode(choice):
     print()
     switch_data_menu_page(choice)
 
-    data = {
-            "a": [80,90,60],
-            "b": [80,110,70,90],
-            "c": [[15, 22, 18, 25],
-                  [20, 12, 10, 18],
-                  [28, 20, 15, 12]],
-            "delta_a": [[40, 90],
-                        [30, 70],
-                        [50, 100]],
-            "k": [[250, 550],
-                  [180, 450],
-                  [320, 600]],
-            "budget": 800,
-            "m": 3,
-            "n": 4,
-            "q": 2
-    }
-    solve_task(data)
+    global DATA, GA_DATA
+    solve_task(DATA, GA_DATA)
 
     print_options(RETURN_TO_MAIN)
     choice = menu_input(RETURN_TO_MAIN)
