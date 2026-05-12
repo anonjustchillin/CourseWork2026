@@ -22,7 +22,7 @@ EXP_DATA_2 = {}
 EXP_DATA_3 = {}
 EXP_GA_DATA = {}
 
-DEFAULT_FOLDER = '\CourseWork2026\output'
+DEFAULT_FOLDER = 'output'
 OUTPUT_FILE = ''
 
 
@@ -123,6 +123,7 @@ def input_data(getGA=True):
 
         for key in first_keys:
             value = get_input(key)
+            value = int(value)
             DATA[key] = value
 
         DATA["a"] = [0 for x in range(DATA["m"])]
@@ -151,6 +152,11 @@ def input_data(getGA=True):
                 while True:
                     value = get_input(key+' (парне число!) ')
                     if value%2 == 0:
+                        break
+            elif key == 'mutation_rate' or key == 'elite_percent':
+                while True:
+                    value = get_input(key+' (від 0 до 1) ')
+                    if 0 <= value <= 1:
                         break
             else:
                 value = get_input(key)
@@ -208,13 +214,18 @@ def generate_data(getGA=True):
     def generate_ga():
         global GA_DATA
         for key, value in GA_PARAMS.items():
-            if key == 'pop_size':
-                while True:
-                    value = get_input(key+' (парне число!) ')
-                    if value%2 == 0:
-                        break
+            if key == 'pop_size' or 'max_stagnation':
+                limit = get_input(f'максимальне значення для {key}')
+                if key == 'pop_size':
+                    while True:
+                        value = random.randrange(1, limit)
+                        if value%2 == 0:
+                            break
+                else:
+                    value = random.randrange(1, limit)
             else:
-                value = get_input(key)
+                value = random.random()
+                value = round(value, 2)
             GA_DATA[key] = value
         return
 
@@ -279,6 +290,10 @@ def read_data():
             for key in ga_data_keys:
                 if key == "pop_size":
                     if data[key] % 2 != 0:
+                        print_error(INCORRECT_DATA)
+                        start()
+                elif key == 'mutation_rate' or key == 'elite_percent':
+                    if 0 > data[key] > 1:
                         print_error(INCORRECT_DATA)
                         start()
                 GA_DATA[key] = data[key]
@@ -430,6 +445,11 @@ def setup_experiments(exp_list):
                     value = get_input(key+' (парне число!) ')
                     if value%2 == 0:
                         break
+            elif key == 'mutation_rate' or key == 'elite_percent':
+                while True:
+                    value = get_input(key+' (від 0 до 1) ')
+                    if 0 <= value <= 1:
+                        break
             else:
                 value = get_input(key)
             EXP_GA_DATA[key] = value
@@ -484,14 +504,40 @@ def run_experiments(exp_list):
 
     setup_experiments(exp_list)
 
-    experiments = ExperimentCreator(output_dir=OUTPUT_FILE,
+    if len(EXP_DATA_2) == 0 and len(EXP_DATA_3) == 0:
+        experiments = ExperimentCreator(output_dir=OUTPUT_FILE,
+                                        params_1=EXP_DATA_1,
+                                        pop_size=EXP_GA_DATA["pop_size"],
+                                        elite_percent=EXP_GA_DATA["elite_percent"],
+                                        mutation_rate=EXP_GA_DATA["mutation_rate"],
+                                        max_stagnation=EXP_GA_DATA["max_stagnation"])
+    elif len(EXP_DATA_1) == 0 and len(EXP_DATA_3) == 0:
+        experiments = ExperimentCreator(output_dir=OUTPUT_FILE,
+                                        params_2=EXP_DATA_2,
+                                        pop_size=EXP_GA_DATA["pop_size"],
+                                        elite_percent=EXP_GA_DATA["elite_percent"],
+                                        mutation_rate=EXP_GA_DATA["mutation_rate"],
+                                        max_stagnation=EXP_GA_DATA["max_stagnation"])
+    elif len(EXP_DATA_1) == 0 and len(EXP_DATA_2) == 0:
+        experiments = ExperimentCreator(output_dir=OUTPUT_FILE,
+                                        params_3=EXP_DATA_3,
+                                        pop_size=EXP_GA_DATA["pop_size"],
+                                        elite_percent=EXP_GA_DATA["elite_percent"],
+                                        mutation_rate=EXP_GA_DATA["mutation_rate"],
+                                        max_stagnation=EXP_GA_DATA["max_stagnation"])
+    elif len(EXP_DATA_1) != 0 and len(EXP_DATA_2) != 0 and len(EXP_DATA_3) != 0:
+        experiments = ExperimentCreator(output_dir=OUTPUT_FILE,
                                     params_1=EXP_DATA_1,
-                                    params_2=EXP_DATA_1,
+                                    params_2=EXP_DATA_2,
                                     params_3=EXP_DATA_3,
                                     pop_size=EXP_GA_DATA["pop_size"],
                                     elite_percent=EXP_GA_DATA["elite_percent"],
                                     mutation_rate=EXP_GA_DATA["mutation_rate"],
                                     max_stagnation=EXP_GA_DATA["max_stagnation"])
+    else:
+        print_error(ERROR_MESS)
+        exit()
+
     if exp_list[0]: run_1(experiments)
     if exp_list[1]: run_2(experiments)
     if exp_list[2]: run_3(experiments)
