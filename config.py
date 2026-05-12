@@ -1,21 +1,21 @@
 EXPERIMENT_PARAMS_1 = {
-    "fixed_generations": 500
+    "fixed_generations": 0
 }
 
 EXPERIMENT_PARAMS_2 = {
-    "m": 20,
-    "n": 50,
-    "q": 5,
-    "pop_size_list": [20, 50, 100, 200],
-    "K": 30
+    "m": 0,
+    "n": 0,
+    "q": 0,
+    "pop_size_list": [],
+    "K": 0
 }
 
 EXPERIMENT_PARAMS_3 = {
-    "m": 5,
-    "n": 10,
-    "q": 2,
-    "v_scale": [1, 2, 4, 6, 8, 10],
-    "K": 30
+    "m": 0,
+    "n": 0,
+    "q": 0,
+    "v_scale": [],
+    "K": 0
 }
 
 """

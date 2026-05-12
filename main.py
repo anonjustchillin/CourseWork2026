@@ -17,6 +17,12 @@ CURR_MENU = -1
 
 DATA = {}
 GA_DATA = {}
+EXP_DATA_1 = {}
+EXP_DATA_2 = {}
+EXP_DATA_3 = {}
+EXP_GA_DATA = {}
+OUTPUT_DIR = '/CourseWork2026/output'
+
 
 def switch_menu_page(choice):
     global CURR_MENU
@@ -148,7 +154,7 @@ def input_data(getGA=True):
 
     input_basic()
     if getGA: input_ga()
-
+    print()
     return
 
 def generate_data(getGA=True):
@@ -209,12 +215,27 @@ def generate_data(getGA=True):
 
     generate_basic()
     if getGA: generate_ga()
-
+    print()
     return
 
 def read_data():
+    def get_input():
+        while True:
+            try:
+                data_path = input(f'Введіть шлях до файлу з даними: ')
+                if os.path.exists(data_path):
+                    break
+                else:
+                    raise FileNotFoundError
+            except ValueError or FileNotFoundError:
+                print_error(NO_FILE)
+        return data_path
 
+    def read_data():
+        global DATA
 
+    read_data()
+    print()
     return
 
 def setup_task(choice):
@@ -236,33 +257,120 @@ def show_task_results(choice):
     return
 
 ######################### ЕКСПЕРИМЕНТИ
-"""
-1)	задання діапазонів зміни параметрів експериментів:
-	розмірність задач (від; до; крок);
-	кількість ІЗ, яку необхідно згенерувати для кожної розмірності;
-	діапазони зміни параметрів задач (коефіцієнтів ЦФ, обмежень тощо);
-2)	генерація множини ІЗ;
-3)	розв’язання множини згенерованих ІЗ усіма розробленими методами;
-"""
 ######## ОТРИМАННЯ ДАНИХ
 def setup_experiments(exp_list):
+    def get_input(name):
+        while True:
+            try:
+                value = float(input(f'Введіть {name}: '))
+                break
+            except ValueError:
+                print_error(INCORRECT_DATA)
+        return value
+
     def setup_1():
-        switch_data_menu_page(choice)
-        return
-    def setup_2():
-        switch_data_menu_page(choice)
-        return
-    def setup_3():
-        switch_data_menu_page(choice)
+        print_subtitle("Експеримент 1. Налаштування")
+        global EXP_DATA_1
+
+        for key, value in EXPERIMENT_PARAMS_1.items():
+            value = get_input(key)
+            EXP_DATA_1[key] = value
+
+        print()
         return
 
-    print_options(DATA_MENU)
-    choice = menu_input(DATA_MENU)
-    print()
+    def setup_2():
+        print_subtitle("Експеримент 2. Налаштування")
+        global EXP_DATA_2
+
+        for key, value in EXPERIMENT_PARAMS_2.items():
+            if key == 'pop_size_list':
+                while True:
+                    pop_size_count = get_input('кількість значень pop_size для аналізу')
+                    pop_size_count = int(pop_size_count)
+                    if pop_size_count < 0:
+                        print_error(INCORRECT_DATA)
+                        continue
+                    break
+                EXP_DATA_2[key] = [0 for x in range(pop_size_count)]
+                for i in range(pop_size_count):
+                    while True:
+                        value = get_input(f'{key}[{i}] (парне число!) ')
+                        if value%2 == 0:
+                            break
+                    EXP_DATA_2[key][i] = value
+            else:
+                value = get_input(key)
+            EXP_DATA_2[key] = value
+
+        print()
+        return
+
+    def setup_3():
+        print_subtitle("Експеримент 3. Налаштування")
+        global EXP_DATA_3
+
+        for key, value in EXPERIMENT_PARAMS_3.items():
+            if key == 'v_scale':
+                while True:
+                    v_scale_count = get_input('кількість значень v_scale для аналізу')
+                    v_scale_count = int(v_scale_count)
+                    if v_scale_count < 0:
+                        print_error(INCORRECT_DATA)
+                        continue
+                    break
+                EXP_DATA_3[key] = [0 for x in range(v_scale_count)]
+                for i in range(v_scale_count):
+                    while True:
+                        value = get_input(f'{key}[{i}] ')
+                        if value <= 0:
+                            print_error(INCORRECT_DATA)
+                            continue
+                        break
+                    EXP_DATA_3[key][i] = value
+            else:
+                value = get_input(key)
+            EXP_DATA_3[key] = value
+
+        print()
+        return
+
+    def setup_ga():
+        print_subtitle("Базові параметри для генетичного алгоритму")
+        global EXP_GA_DATA
+
+        for key, value in GA_PARAMS.items():
+            if key == 'pop_size':
+                while True:
+                    value = get_input(key+' (парне число!) ')
+                    if value%2 == 0:
+                        break
+            else:
+                value = get_input(key)
+            EXP_GA_DATA[key] = value
+
+        print()
+        return
+
+    def get_output_dir():
+        global OUTPUT_DIR
+        while True:
+            try:
+                data_path = input(f'Введіть шлях для збереження даних: ')
+                if not os.path.exists(data_path):
+                    f = open(data_path, "x")
+                    f.close()
+                break
+            except ValueError:
+                print_error(ERROR_MESS)
+        OUTPUT_DIR = data_path
+        return
 
     if exp_list[0]: setup_1()
     if exp_list[1]: setup_2()
     if exp_list[2]: setup_3()
+    setup_ga()
+    get_output_dir()
 
 ######## ЗАПУСК ЕКСПЕРИМЕНТУ/ІВ
 def run_experiments(exp_list):
@@ -285,7 +393,14 @@ def run_experiments(exp_list):
 
     setup_experiments(exp_list)
 
-    experiments = ExperimentCreator(output_dir='/')
+    experiments = ExperimentCreator(output_dir=OUTPUT_DIR,
+                                    params_1=EXP_DATA_1,
+                                    params_2=EXP_DATA_1,
+                                    params_3=EXP_DATA_3,
+                                    pop_size=EXP_GA_DATA["pop_size"],
+                                    elite_percent=EXP_GA_DATA["elite_percent"],
+                                    mutation_rate=EXP_GA_DATA["mutation_rate"],
+                                    max_stagnation=EXP_GA_DATA["max_stagnation"])
     if exp_list[0]: run_1(experiments)
     if exp_list[1]: run_2(experiments)
     if exp_list[2]: run_3(experiments)
@@ -355,12 +470,14 @@ def solve_task(task_data, ga_data):
 def task_mode(choice):
     print_title(MAIN_MENU[choice])
 
-    print_options(DATA_MENU)
-    choice = menu_input(DATA_MENU)
-    print()
-    switch_data_menu_page(choice)
-
     global DATA, GA_DATA
+
+    if len(DATA) == 0 and len(GA_DATA) == 0:
+        print_options(DATA_MENU)
+        choice = menu_input(DATA_MENU)
+        print()
+        switch_data_menu_page(choice)
+
     solve_task(DATA, GA_DATA)
 
     print_options(RETURN_TO_MAIN)

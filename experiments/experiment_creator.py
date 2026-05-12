@@ -19,7 +19,14 @@ from generator.task_generator import TaskGenerator
 DPI = 300
 
 class ExperimentCreator:
-    def __init__(self, output_dir, params_1=BASE_PARAMS_1, params_2=BASE_PARAMS_2, params_3=BASE_PARAMS_3):
+    def __init__(self, output_dir,
+                 params_1=BASE_PARAMS_1,
+                 params_2=BASE_PARAMS_2,
+                 params_3=BASE_PARAMS_3,
+                 pop_size=2,
+                 elite_percent=0.5,
+                 mutation_rate=0.5,
+                 max_stagnation=5):
         self.fixed_generations = params_1["fixed_generations"]
 
         self.m_2 = params_2["m"]
@@ -34,10 +41,10 @@ class ExperimentCreator:
         self.v_scale = params_3["v_scale"]
         self.K_3 = params_3["K"]
 
-        self.pop_size = 2
-        self.elite_percent = 0.5
-        self.mutation_rate = 0.5
-        self.max_stagnation = 5
+        self.pop_size = pop_size
+        self.elite_percent = elite_percent
+        self.mutation_rate = mutation_rate
+        self.max_stagnation = max_stagnation
 
         self.time_start = 0
         self.time_elapsed = 0
