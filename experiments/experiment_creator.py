@@ -93,10 +93,10 @@ class ExperimentCreator:
             plt.grid(alpha=0.3)
             plt.show()
 
-            #plot_path = os.path.join(self.output_dir, name + ".png")
-            #plt.savefig(self.output_dir, dpi=DPI)
+            plot_path = os.path.join(self.output_dir, name + ".png")
+            plt.savefig(plot_path, dpi=DPI)
 
-            #plt.close()
+            plt.close()
             return
 
         results = {}
@@ -129,9 +129,10 @@ class ExperimentCreator:
             ax.legend()
             plt.show()
 
-            #plt.savefig(self.output_dir, dpi=DPI)
+            plot_path = os.path.join(self.output_dir, name + ".png")
+            plt.savefig(plot_path, dpi=DPI)
 
-            # plt.close()
+            plt.close()
             return
         """
             Параметри:
@@ -187,9 +188,10 @@ class ExperimentCreator:
             plt.grid(alpha=0.3)
             plt.show()
 
-            #plt.savefig(self.output_dir, dpi=DPI)
+            plot_path = os.path.join(self.output_dir, name + ".png")
+            plt.savefig(plot_path, dpi=DPI)
 
-            # plt.close()
+            plt.close()
             return
         """
             Параметри (для GA):
