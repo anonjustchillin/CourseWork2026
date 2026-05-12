@@ -461,14 +461,9 @@ def setup_experiments(exp_list):
         global OUTPUT_FILE
         while True:
             try:
-                data_path = input(f'Введіть назву файлу для збереження даних: ')
+                data_path = input(f'Введіть назву папки для збереження даних: ')
                 data_path = os.path.join(DEFAULT_FOLDER, data_path)
                 if not os.path.exists(data_path):
-                    try:
-                        f = open(data_path, "x")
-                        f.close()
-                        break
-                    except FileExistsError or FileNotFoundError:
                         print_error(ERROR_MESS)
                 else:
                     break
