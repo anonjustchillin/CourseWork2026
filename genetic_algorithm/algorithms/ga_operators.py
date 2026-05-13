@@ -18,11 +18,10 @@ def reanimate_chromosome(y, a, b, delta_a, k, budget):
     """
     m = len(y)
     q = len(y[0])
+
     total_demand = sum(b)
     base_capacity = sum(a)
 
-    # Жадібний підхід: побудувати допустимий розв'язок за потреби
-    # Сортуємо всі сценарії за ефективністю (delta_a / k) за спаданням
     all_scenarios = []
     for i in range(m):
         for t in range(q):
@@ -31,17 +30,14 @@ def reanimate_chromosome(y, a, b, delta_a, k, budget):
 
     all_scenarios.sort(reverse=True, key=lambda x: x[0])
 
-    # Спробувати зберегти поточну хромосому допустимою, інакше перебудувати
     current_cost = _calculate_total_cost(y, k)
     current_expansion = _calculate_total_expansion(y, delta_a)
 
-    # Якщо перевищено бюджет, видаляємо найменш ефективні сценарії
     while current_cost > budget:
         active = _get_active_scenarios(y)
         if not active:
             break
 
-        # Знайти найменш ефективний активний сценарій
         least_efficient = None
         min_eff = float('inf')
         for i, t in active:
@@ -56,13 +52,12 @@ def reanimate_chromosome(y, a, b, delta_a, k, budget):
             current_cost -= k[i][t]
             current_expansion -= delta_a[i][t]
 
-    # Якщо попит не покрито, додаємо ефективні сценарії в межах бюджету
     while base_capacity + current_expansion < total_demand:
         best_scenario = None
         best_eff = -1
 
         for i in range(m):
-            if sum(y[i]) > 0:  # Вже має сценарій
+            if sum(y[i]) > 0:
                 continue
             for t in range(q):
                 if current_cost + k[i][t] <= budget:
@@ -79,7 +74,6 @@ def reanimate_chromosome(y, a, b, delta_a, k, budget):
         current_cost += k[i][t]
         current_expansion += delta_a[i][t]
 
-    # Фінальна перевірка
     total_capacity = base_capacity + current_expansion
     demand_is_covered = total_demand <= total_capacity
     within_budget = current_cost <= budget
@@ -100,7 +94,7 @@ def _get_inactive_scenarios(y):
     """Повертає список пар (i, t) для постачальників без активного сценарію."""
     result = []
     for i in range(len(y)):
-        if sum(y[i]) == 0:  # Немає активного сценарію для цього постачальника
+        if sum(y[i]) == 0:
             for t in range(len(y[i])):
                 result.append((i, t))
     return result
