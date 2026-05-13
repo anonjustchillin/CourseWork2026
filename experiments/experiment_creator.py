@@ -116,21 +116,22 @@ class ExperimentCreator:
         #print('Експеримент 2 !!!!')
         def plot_result(data, class_names, name=''):
             x_classes = [class_name[0]+"-"+class_name[1] for class_name in class_names]
-            x = len(x_classes)
+            x = np.arange(len(x_classes))
 
             width = 0.25
             multiplier = 0
 
-            fig, ax = plt.subplots(layout='constrained')
+            fig, ax = plt.subplots(figsize=(14, 6), layout='constrained')
             for pop_size, values in data.items():
                 offset = width * multiplier
-                ax.bar(x+offset, values, width, label=pop_size)
+                rects = ax.bar(x+offset, values, width, label=pop_size)
+                ax.bar_label(rects, padding=3, fontsize=8)
                 multiplier += 1
 
             ax.set_title("Вплив кількості особин в популяції (I) на ЦФ генетичного алгоритму")
             ax.set_ylabel("Значення ЦФ")
             ax.set_xticks(x + width, x_classes)
-            ax.legend()
+            ax.legend(loc='lower right')
 
             plot_path = os.path.join(self.output_dir, name + ".png")
             plt.savefig(plot_path, dpi=DPI)
@@ -156,25 +157,25 @@ class ExperimentCreator:
                        ["R1","B3"],
                        ["R3","B3"],
                        ["R2","B2"]]
-
-        results = {i: [] for i in self.pop_size_list}
+        pop_size_labels = ["I="+str(i) for i in self.pop_size_list]
+        results = {i: [] for i in pop_size_labels}
 
         for class_name in class_names:
-            print(class_name)
+            #print(class_name)
             r_class_name, b_class_name = class_name
             results_k = {i: [] for i in self.pop_size_list}
             for k in range(1, K+1):
-                print(f'k={k}')
+                #print(f'k={k}')
                 curr_task = TaskGenerator()
                 curr_task_data = curr_task.generate(r_class_name, b_class_name, m=m, n=n, q=q)
                 for pop_size_i in self.pop_size_list:
-                    print(f'pop_size={pop_size_i}')
+                    #print(f'pop_size={pop_size_i}')
                     curr_solution = GeneticAlgorithm(curr_task_data, pop_size_i, self.mutation_rate, self.elite_percent, self.max_stagnation)
                     best_res, _ = curr_solution.run()
                     results_k[pop_size_i].append(best_res.fitness)
 
             for pop_size_i in self.pop_size_list:
-                results[pop_size_i].append(stats.fmean(results_k[pop_size_i]))
+                results["I="+str(pop_size_i)].append(stats.fmean(results_k[pop_size_i]))
 
         plot_result(results, class_names, f"experiment_2")
 
