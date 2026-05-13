@@ -22,6 +22,8 @@ EXP_DATA_2 = {}
 EXP_DATA_3 = {}
 EXP_GA_DATA = {}
 
+INT_ONLY = ["m", "n", "q", "pop_size", "max_stagnation", "K", "fixed_generations"]
+
 DEFAULT_FOLDER = 'output'
 OUTPUT_DIR = ''
 
@@ -107,7 +109,10 @@ def input_data(getGA=True):
     def get_input(name):
         while True:
             try:
-                value = float(input(f'Введіть {name}: '))
+                if name in INT_ONLY:
+                    value = int(input(f'Введіть {name}: '))
+                else:
+                    value = float(input(f'Введіть {name}: '))
                 break
             except ValueError:
                 print_error(INCORRECT_DATA)
@@ -360,7 +365,10 @@ def setup_experiments(exp_list):
     def get_input(name):
         while True:
             try:
-                value = float(input(f'Введіть {name}: '))
+                if name in INT_ONLY:
+                    value = int(input(f'Введіть {name}: '))
+                else:
+                    value = float(input(f'Введіть {name}: '))
                 break
             except ValueError:
                 print_error(INCORRECT_DATA)
@@ -483,20 +491,33 @@ def setup_experiments(exp_list):
 def run_experiments(exp_list, default_params):
     def run_1(experiments):
         print_title("Експеримент 1")
-        print_subtitle(EXPERIMENT_QUESTION)
+        for key, item in EXP_DATA_1.items():
+            print(f'{key}: {item}')
+        for key, item in EXP_GA_DATA.items():
+            print(f'{key}: {item}')
+        print_subtitle(EXPERIMENT_RUN)
         experiments.run_experiment_1()
-        print_success("Готово!")
+        print_success(EXPERIMENT_DONE)
         print()
     def run_2(experiments):
         print_title("Експеримент 2")
-        print(EXP_DATA_2)
+        for key, item in EXP_DATA_2.items():
+            print(f'{key}: {item}')
+        for key, item in EXP_GA_DATA.items():
+            print(f'{key}: {item}')
+        print_subtitle(EXPERIMENT_RUN)
         experiments.run_experiment_2()
-        print_success("Готово!")
+        print_success(EXPERIMENT_DONE)
         print()
     def run_3(experiments):
         print_title("Експеримент 3")
+        for key, item in EXP_DATA_3.items():
+            print(f'{key}: {item}')
+        for key, item in EXP_GA_DATA.items():
+            print(f'{key}: {item}')
+        print_subtitle(EXPERIMENT_RUN)
         experiments.run_experiment_3()
-        print_success("Готово!")
+        print_success(EXPERIMENT_DONE)
         print()
 
     if not default_params:
@@ -617,6 +638,10 @@ def task_mode(choice):
         print()
         switch_data_menu_page(choice)
 
+    for key, item in DATA.items():
+        print(f'{key}: {item}')
+    for key, item in GA_DATA.items():
+        print(f'{key}: {item}')
     solve_task(DATA, GA_DATA)
 
     print_options(RETURN_TO_MAIN)

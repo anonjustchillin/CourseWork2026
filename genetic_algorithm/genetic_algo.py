@@ -186,8 +186,8 @@ class GeneticAlgorithm:
 
         #print('in run func')
 
-        if fixed_generations is None:
-            print(f"Початковий рекорд: {best.fitness:.2f}")
+        #if fixed_generations is None:
+        #    print(f"Початковий рекорд: {best.fitness:.2f}")
 
         while True:
             #print('in while True')
