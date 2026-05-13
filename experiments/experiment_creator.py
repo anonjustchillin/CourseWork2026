@@ -29,15 +29,9 @@ class ExperimentCreator:
                  max_stagnation=5):
         self.fixed_generations = params_1["fixed_generations"]
 
-        self.m_2 = params_2["m"]
-        self.n_2 = params_2["n"]
-        self.q_2 = params_2["q"]
         self.pop_size_list = params_2["pop_size_list"]
         self.K_2 = params_2["K"]
 
-        self.m_3 = params_3["m"]
-        self.n_3 = params_3["n"]
-        self.q_3 = params_3["q"]
         self.v_scale = params_3["v_scale"]
         self.K_3 = params_3["K"]
 
@@ -147,9 +141,7 @@ class ExperimentCreator:
             mutation_rate (float): Ймовірність мутації (від 0 до 1).
         """
 
-        m = self.m_2
-        n = self.n_2
-        q = self.q_2
+        s_class_name = "S2"
         K = self.K_2
 
         class_names = [["R1","B1"],
@@ -167,7 +159,7 @@ class ExperimentCreator:
             for k in range(1, K+1):
                 #print(f'k={k}')
                 curr_task = TaskGenerator()
-                curr_task_data = curr_task.generate(r_class_name, b_class_name, m=m, n=n, q=q)
+                curr_task_data = curr_task.generate(r_class_name, b_class_name, s_class_name=s_class_name)
                 for pop_size_i in self.pop_size_list:
                     #print(f'pop_size={pop_size_i}')
                     curr_solution = GeneticAlgorithm(curr_task_data, pop_size_i, self.mutation_rate, self.elite_percent, self.max_stagnation)
@@ -207,9 +199,9 @@ class ExperimentCreator:
             mutation_rate (float): Ймовірність мутації (від 0 до 1).
         """
 
-        m = self.m_3
-        n = self.n_3
-        q = self.q_3
+        m = 5
+        n = 10
+        q = 2
         K = self.K_3
 
         greedy_time = []

@@ -3,17 +3,11 @@ EXPERIMENT_PARAMS_1 = {
 }
 
 EXPERIMENT_PARAMS_2 = {
-    "m": 0,
-    "n": 0,
-    "q": 0,
     "pop_size_list": [],
     "K": 0
 }
 
 EXPERIMENT_PARAMS_3 = {
-    "m": 0,
-    "n": 0,
-    "q": 0,
     "v_scale": [],
     "K": 0
 }

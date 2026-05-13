@@ -361,7 +361,7 @@ def show_task_results(choice):
 
 ######################### ЕКСПЕРИМЕНТИ
 ######## ОТРИМАННЯ ДАНИХ
-def setup_experiments(exp_list):
+def setup_experiments(exp_list, dir_only=False):
     def get_input(name):
         while True:
             try:
@@ -449,15 +449,20 @@ def setup_experiments(exp_list):
 
         for key, value in GA_PARAMS.items():
             if key == 'pop_size':
-                while True:
-                    value = get_input(key+' (парне число!) ')
-                    if value%2 == 0:
-                        break
+                if exp_list[1] and not exp_list[0] and not exp_list[2]:
+                    value = 0
+                else:
+                    while True:
+                        value = get_input(key+' (парне число!) ')
+                        if value%2 == 0:
+                            break
             elif key == 'mutation_rate' or key == 'elite_percent':
                 while True:
                     value = get_input(key+' (від 0 до 1) ')
                     if 0 <= value <= 1:
                         break
+            elif key == 'max_stagnation' and (exp_list[0] and not exp_list[1] and not exp_list[2]):
+                value = 0
             else:
                 value = get_input(key)
             EXP_GA_DATA[key] = value
@@ -481,11 +486,14 @@ def setup_experiments(exp_list):
         OUTPUT_DIR = data_path
         return
 
-    if exp_list[0]: setup_1()
-    if exp_list[1]: setup_2()
-    if exp_list[2]: setup_3()
-    setup_ga()
-    get_output_dir()
+    if dir_only:
+        get_output_dir()
+    else:
+        if exp_list[0]: setup_1()
+        if exp_list[1]: setup_2()
+        if exp_list[2]: setup_3()
+        setup_ga()
+        get_output_dir()
 
 ######## ЗАПУСК ЕКСПЕРИМЕНТУ/ІВ
 def run_experiments(exp_list, default_params):
@@ -522,6 +530,8 @@ def run_experiments(exp_list, default_params):
 
     if not default_params:
         setup_experiments(exp_list)
+    else:
+        setup_experiments(exp_list, True)
 
     if len(EXP_DATA_1) != 0 and len(EXP_DATA_2) == 0 and len(EXP_DATA_3) == 0:
         experiments = ExperimentCreator(output_dir=OUTPUT_DIR,
@@ -589,6 +599,7 @@ def experiment_mode(choice):
     elif exp_choice == 2:
         exp_list[2] = True
     else:
+        if exp_choice == 4: default_params = True
         exp_list[0] = True
         exp_list[1] = True
         exp_list[2] = True
