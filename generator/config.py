@@ -18,9 +18,9 @@ BASE_CONSTANTS = {
 # beta: коефіцієнт потенціалу розширення
 # tau: коефіцієнт достатності бюджету
 TASK_R_CLASSES = {
-    "R1": {"gamma": 0.25, "beta": 0.75},
-    "R2": {"gamma": 0.20, "beta": 0.80},
-    "R3": {"gamma": 0.15, "beta": 0.85},
+    "R1": {"gamma": 0.4, "beta": 0.65},
+    "R2": {"gamma": 0.25, "beta": 0.75},
+    "R3": {"gamma": 0.05, "beta": 0.95},
 }
 
 TASK_B_CLASSES = {
