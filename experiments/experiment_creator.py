@@ -1,5 +1,6 @@
 import time
 from datetime import datetime
+from multiprocessing import Pool
 import matplotlib.pyplot as plt
 import os
 import numpy as np
@@ -8,6 +9,25 @@ from defaults import EXPERIMENT_1_DEFAULTS, EXPERIMENT_2_DEFAULTS, EXPERIMENT_3_
 from genetic_algorithm.genetic_algo import GeneticAlgorithm
 from greedy_algorithm.greedy_algo import GreedyAlgorithm
 from generator.task_generator import TaskGenerator
+
+
+def _exp2_worker(args):
+    """Один прогін експерименту 2: одна задача (class, k), всі pop_size на ній.
+
+    Виконується в окремому процесі, тому має бути на рівні модуля (picklable).
+    """
+    (class_idx, r_class, b_class, s_class, pop_size_list,
+     mutation_rate, elite_percent, max_stagnation) = args
+
+    curr_task_data = TaskGenerator().generate(r_class, b_class, s_class_name=s_class)
+
+    fitness_by_pop = {}
+    for pop_size_i in pop_size_list:
+        ga = GeneticAlgorithm(curr_task_data, pop_size_i,
+                              mutation_rate, elite_percent, max_stagnation)
+        best_res, _ = ga.run()
+        fitness_by_pop[pop_size_i] = best_res.fitness
+    return class_idx, fitness_by_pop
 
 
 """
@@ -158,22 +178,29 @@ class ExperimentCreator:
         pop_size_labels = ["I="+str(i) for i in self.pop_size_list]
         results = {i: [] for i in pop_size_labels}
 
-        for class_name in class_names:
-            #print(class_name)
-            r_class_name, b_class_name = class_name
-            results_k = {i: [] for i in self.pop_size_list}
-            for k in range(1, K+1):
-                #print(f'k={k}')
-                curr_task = TaskGenerator()
-                curr_task_data = curr_task.generate(r_class_name, b_class_name, s_class_name=s_class_name)
-                for pop_size_i in self.pop_size_list:
-                    #print(f'pop_size={pop_size_i}')
-                    curr_solution = GeneticAlgorithm(curr_task_data, pop_size_i, self.mutation_rate, self.elite_percent, self.max_stagnation)
-                    best_res, _ = curr_solution.run()
-                    results_k[pop_size_i].append(best_res.fitness)
+        jobs = []
+        for class_idx, (r_class_name, b_class_name) in enumerate(class_names):
+            for k in range(K):
+                jobs.append((class_idx, r_class_name, b_class_name, s_class_name,
+                             self.pop_size_list, self.mutation_rate,
+                             self.elite_percent, self.max_stagnation))
 
+        # results_k_by_class[class_idx][pop_size] -> список значень fitness
+        results_k_by_class = {
+            ci: {p: [] for p in self.pop_size_list} for ci in range(len(class_names))
+        }
+
+        with Pool(18) as pool:
+            for class_idx, fitness_by_pop in pool.imap_unordered(_exp2_worker, jobs):
+                for pop_size_i, fit in fitness_by_pop.items():
+                    results_k_by_class[class_idx][pop_size_i].append(fit)
+
+        # збираємо результати в порядку класів (процеси завершуються не по черзі)
+        for class_idx in range(len(class_names)):
             for pop_size_i in self.pop_size_list:
-                results["I="+str(pop_size_i)].append(stats.fmean(results_k[pop_size_i]))
+                results["I="+str(pop_size_i)].append(
+                    stats.fmean(results_k_by_class[class_idx][pop_size_i])
+                )
 
         plot_result(results, class_names, f"experiment_2")
 
@@ -205,9 +232,9 @@ class ExperimentCreator:
             mutation_rate (float): Ймовірність мутації (від 0 до 1).
         """
 
-        m = 5
-        n = 10
-        q = 2
+        base_m = 5
+        base_n = 10
+        base_q = 2
         K = self.K_3
 
         greedy_time = []
@@ -218,9 +245,9 @@ class ExperimentCreator:
 
         for v in self.v_scale:
             #print(f'v={v}')
-            m = int(m*v)
-            n = int(n*v)
-            q = int(q*v)
+            m = int(base_m*v)
+            n = int(base_n*v)
+            q = int(base_q*v)
 
             greedy_time_k = []
             genetic_time_k = []

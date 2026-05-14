@@ -38,7 +38,7 @@ EXPERIMENT_1_DEFAULTS = {
 # Експеримент 2
 EXPERIMENT_2_DEFAULTS = {
     "pop_size_list": [20, 50, 100, 200],
-    "K": 30,
+    "K": 20,
     "s_class": "S2"
 }
 
