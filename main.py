@@ -3,6 +3,7 @@ from rich.console import Console
 from rich.table import Table
 from all_text import *
 from config import *
+from defaults import GA_DEFAULTS, get_ga_params, EXPERIMENT_1_DEFAULTS, EXPERIMENT_2_DEFAULTS, EXPERIMENT_3_DEFAULTS
 from experiments.experiment_creator import ExperimentCreator
 from genetic_algorithm.genetic_algo import GeneticAlgorithm
 from greedy_algorithm.greedy_algo import GreedyAlgorithm
@@ -21,6 +22,10 @@ EXP_DATA_1 = {}
 EXP_DATA_2 = {}
 EXP_DATA_3 = {}
 EXP_GA_DATA = {}
+
+# Результати розв'язання
+GREEDY_RESULT = None  # (x, y, cost, time)
+GA_RESULT = None      # (x, y, cost, time)
 
 INT_ONLY = ["m", "n", "q", "pop_size", "max_stagnation", "K", "fixed_generations"]
 
@@ -174,68 +179,114 @@ def input_data(getGA=True):
     return
 
 def generate_data(getGA=True):
+    from generator.task_generator import TaskGenerator
+
+    def choose_class(class_type, options):
+        """Вибір класу задачі з меню."""
+        print_subtitle(f"Оберіть {class_type}-клас:")
+        for i, opt in enumerate(options):
+            print(f"  {i+1} -- {opt}")
+        while True:
+            try:
+                choice = int(input(CHOICE_STR)) - 1
+                if 0 <= choice < len(options):
+                    return options[choice]
+                print_error(ERROR_MESS)
+            except ValueError:
+                print_error(ERROR_MESS)
+
     def get_input(name):
         while True:
             try:
-                value = int(input(f'Введіть {name}: '))
+                if name in INT_ONLY:
+                    value = int(input(f'Введіть {name}: '))
+                else:
+                    value = float(input(f'Введіть {name}: '))
                 break
             except ValueError:
                 print_error(INCORRECT_DATA)
         return value
 
-    def generate_basic():
-        global DATA
-
-        first_keys = ["budget", "m", "n", "q"]
-        other_keys_1d = ["a", "b"]
-        other_keys_2d = ["c", "delta_a", "k"]
-
-        for key in first_keys:
-            limit = get_input(f'максимальне значення для {key}')
-            value = random.randrange(1, limit)
-            DATA[key] = value
-
-        DATA["a"] = [0 for x in range(DATA["m"])]
-        DATA["b"] = [0 for x in range(DATA["n"])]
-        DATA["c"] = [[0] * DATA["n"] for i in range(DATA["m"])]
-        DATA["delta_a"] = [[0] * DATA["q"] for i in range(DATA["m"])]
-        DATA["k"] = [[0] * DATA["q"] for i in range(DATA["m"])]
-
-        for key in other_keys_1d:
-            limit = get_input(f'максимальне значення для {key}')
-            for i in range(len(DATA[key])):
-                value = random.randrange(1, limit)
-                DATA[key][i] = value
-
-        for key in other_keys_2d:
-            limit = get_input(f'максимальне значення для {key}')
-            for i in range(len(DATA[key])):
-                for j in range(len(DATA[key][0])):
-                    value = random.randrange(1, limit)
-                    DATA[key][i][j] = value
-
-        return
-
     def generate_ga():
         global GA_DATA
-        for key, value in GA_PARAMS.items():
-            if key == 'pop_size' or 'max_stagnation':
-                limit = get_input(f'максимальне значення для {key}')
+        # Отримуємо параметри за замовчуванням
+        recommended = get_ga_params()
+
+        print_subtitle("Використати параметри GA за замовчуванням?")
+        print(f"  1 -- Так: pop_size={recommended['pop_size']}, mutation={recommended['mutation_rate']}, elite={recommended['elite_percent']}, stagnation={recommended['max_stagnation']}")
+        print("  2 -- Ні, ввести вручну")
+        while True:
+            try:
+                ga_choice = int(input(CHOICE_STR))
+                if ga_choice in [1, 2]:
+                    break
+                print_error(ERROR_MESS)
+            except ValueError:
+                print_error(ERROR_MESS)
+
+        if ga_choice == 1:
+            for key, value in recommended.items():
+                GA_DATA[key] = value
+        else:
+            for key in GA_PARAMS.keys():
                 if key == 'pop_size':
                     while True:
-                        value = random.randrange(1, limit)
-                        if value%2 == 0:
+                        value = int(get_input(key + ' (парне число!)'))
+                        if value % 2 == 0:
                             break
+                        print_error("Має бути парне число!")
+                elif key == 'mutation_rate' or key == 'elite_percent':
+                    while True:
+                        value = get_input(key + ' (від 0 до 1)')
+                        if 0 <= value <= 1:
+                            break
+                        print_error("Має бути від 0 до 1!")
                 else:
-                    value = random.randrange(1, limit)
-            else:
-                value = random.random()
-                value = round(value, 2)
-            GA_DATA[key] = value
+                    value = int(get_input(key))
+                GA_DATA[key] = value
         return
 
-    generate_basic()
-    if getGA: generate_ga()
+    # Зберігаємо s_class якщо обрано
+    s_class_selected = None
+
+    def generate_basic_with_class():
+        nonlocal s_class_selected
+        global DATA
+
+        r_class = choose_class("R", ["R1", "R2", "R3"])
+        b_class = choose_class("B", ["B1", "B2", "B3"])
+
+        print_subtitle("Розмірність задачі:")
+        print("  1 -- Обрати S-клас (S1/S2/S3)")
+        print("  2 -- Ввести m, n, q вручну")
+        while True:
+            try:
+                size_choice = int(input(CHOICE_STR))
+                if size_choice in [1, 2]:
+                    break
+                print_error(ERROR_MESS)
+            except ValueError:
+                print_error(ERROR_MESS)
+
+        generator = TaskGenerator()
+
+        if size_choice == 1:
+            s_class_selected = choose_class("S", ["S1", "S2", "S3"])
+            task_data = generator.generate(r_class, b_class, s_class_name=s_class_selected)
+        else:
+            m = int(get_input("m (кількість постачальників)"))
+            n = int(get_input("n (кількість споживачів)"))
+            q = int(get_input("q (кількість сценаріїв)"))
+            task_data = generator.generate(r_class, b_class, m=m, n=n, q=q)
+
+        for key, value in task_data.items():
+            DATA[key] = value
+
+        print_success(f"Задачу згенеровано: {r_class}-{b_class}, m={DATA['m']}, n={DATA['n']}, q={DATA['q']}")
+
+    generate_basic_with_class()
+    if getGA:
+        generate_ga()
     print()
     return
 
@@ -250,10 +301,9 @@ def read_data():
                 break
             except ValueError or FileNotFoundError:
                 print_error(NO_FILE)
-
         return data_path
 
-    global DATA, GA_PARAMS
+    global DATA, GA_DATA
 
     data_path = get_input()
 
@@ -263,48 +313,59 @@ def read_data():
             data_keys = ["m", "n", "q", "a", "b", "c", "delta_a", "k", "budget"]
             ga_data_keys = ["pop_size", "mutation_rate", "elite_percent", "max_stagnation"]
 
+            # Валідація даних задачі
             for key in data_keys:
-                if key == "m" or key == "n" or key == "q":
-                    if data[key] <= 0:
-                        print_error(INCORRECT_DATA)
-                        start()
-                elif key == "c":
-                    if len(data[key]) != data["m"]:
-                        print_error(INCORRECT_DATA)
-                        start()
-                    elif len(data[key][0]) != data["n"]:
-                        print_error(INCORRECT_DATA)
-                        start()
-                elif key == "delta_a":
-                    if len(data[key]) != data["m"]:
-                        print_error(INCORRECT_DATA)
-                        start()
-                    elif len(data[key][0]) != data["q"]:
-                        print_error(INCORRECT_DATA)
-                        start()
-                elif key == "k":
-                    if len(data[key]) != data["m"]:
-                        print_error(INCORRECT_DATA)
-                        start()
-                    elif len(data[key][0]) != data["q"]:
-                        print_error(INCORRECT_DATA)
-                        start()
-                else:
-                    DATA[key] = data[key]
+                if key not in data:
+                    print_error(f"Відсутній ключ: {key}")
+                    return
 
-            for key in ga_data_keys:
-                if key == "pop_size":
-                    if data[key] % 2 != 0:
-                        print_error(INCORRECT_DATA)
-                        start()
-                elif key == 'mutation_rate' or key == 'elite_percent':
-                    if 0 > data[key] > 1:
-                        print_error(INCORRECT_DATA)
-                        start()
-                GA_DATA[key] = data[key]
+            if data["m"] <= 0 or data["n"] <= 0 or data["q"] <= 0:
+                print_error("m, n, q мають бути > 0")
+                return
+
+            if len(data["c"]) != data["m"] or len(data["c"][0]) != data["n"]:
+                print_error("Неправильний розмір матриці c")
+                return
+
+            if len(data["delta_a"]) != data["m"] or len(data["delta_a"][0]) != data["q"]:
+                print_error("Неправильний розмір матриці delta_a")
+                return
+
+            if len(data["k"]) != data["m"] or len(data["k"][0]) != data["q"]:
+                print_error("Неправильний розмір матриці k")
+                return
+
+            # Записуємо дані задачі
+            for key in data_keys:
+                DATA[key] = data[key]
+
+            # Читаємо параметри GA (якщо є)
+            if all(key in data for key in ga_data_keys):
+                if data["pop_size"] % 2 != 0:
+                    print_error("pop_size має бути парним")
+                    return
+                if not (0 <= data["mutation_rate"] <= 1):
+                    print_error("mutation_rate має бути від 0 до 1")
+                    return
+                if not (0 <= data["elite_percent"] <= 1):
+                    print_error("elite_percent має бути від 0 до 1")
+                    return
+
+                for key in ga_data_keys:
+                    GA_DATA[key] = data[key]
+            else:
+                # Використовуємо параметри за замовчуванням
+                recommended = get_ga_params()
+                for key, value in recommended.items():
+                    GA_DATA[key] = value
+                print_comment("Параметри GA встановлено за замовчуванням")
+
+            print_success(f"Дані завантажено: m={DATA['m']}, n={DATA['n']}, q={DATA['q']}")
 
         except json.decoder.JSONDecodeError:
-            print_error(NO_DATA)
+            print_error("Помилка читання JSON файлу")
+        except KeyError as e:
+            print_error(f"Відсутній ключ у файлі: {e}")
 
     print()
     return
@@ -353,7 +414,36 @@ def show_task(choice):
 def show_task_results(choice):
     print_title(MAIN_MENU[choice])
 
-    print()
+    if GREEDY_RESULT is None and GA_RESULT is None:
+        print_error("Задачу ще не розв'язано. Спочатку оберіть пункт 2.")
+        print()
+    else:
+        # Вивід результатів жадібного алгоритму
+        if GREEDY_RESULT:
+            greedy_x, greedy_y, greedy_cost, greedy_time = GREEDY_RESULT
+            print_title('Жадібний алгоритм')
+            print_scenarios_table(greedy_y, "Обрані сценарії")
+            print()
+            print_transport_plan(greedy_x, "Транспортний план")
+            print()
+
+        # Вивід результатів GA
+        if GA_RESULT:
+            ga_x, ga_y, ga_cost, ga_time = GA_RESULT
+            print_title('Генетичний алгоритм')
+            print_scenarios_table(ga_y, "Обрані сценарії")
+            print()
+            print_transport_plan(ga_x, "Транспортний план")
+            print()
+
+        # Порівняльна таблиця
+        if GREEDY_RESULT and GA_RESULT:
+            greedy_cost = GREEDY_RESULT[2]
+            greedy_time = GREEDY_RESULT[3]
+            ga_cost = GA_RESULT[2]
+            ga_time = GA_RESULT[3]
+            print_comparison_table(greedy_cost, greedy_time, ga_cost, ga_time)
+
     print_options(RETURN_TO_MAIN)
     choice = menu_input(RETURN_TO_MAIN)
     switch_menu_page(choice, True)
@@ -536,33 +626,21 @@ def run_experiments(exp_list, default_params):
     if len(EXP_DATA_1) != 0 and len(EXP_DATA_2) == 0 and len(EXP_DATA_3) == 0:
         experiments = ExperimentCreator(output_dir=OUTPUT_DIR,
                                         params_1=EXP_DATA_1,
-                                        pop_size=EXP_GA_DATA["pop_size"],
-                                        elite_percent=EXP_GA_DATA["elite_percent"],
-                                        mutation_rate=EXP_GA_DATA["mutation_rate"],
-                                        max_stagnation=EXP_GA_DATA["max_stagnation"])
+                                        ga_params=EXP_GA_DATA)
     elif len(EXP_DATA_1) == 0 and len(EXP_DATA_2) != 0 and len(EXP_DATA_3) == 0:
         experiments = ExperimentCreator(output_dir=OUTPUT_DIR,
                                         params_2=EXP_DATA_2,
-                                        pop_size=EXP_GA_DATA["pop_size"],
-                                        elite_percent=EXP_GA_DATA["elite_percent"],
-                                        mutation_rate=EXP_GA_DATA["mutation_rate"],
-                                        max_stagnation=EXP_GA_DATA["max_stagnation"])
+                                        ga_params=EXP_GA_DATA)
     elif len(EXP_DATA_1) == 0 and len(EXP_DATA_2) == 0 and len(EXP_DATA_3) != 0:
         experiments = ExperimentCreator(output_dir=OUTPUT_DIR,
                                         params_3=EXP_DATA_3,
-                                        pop_size=EXP_GA_DATA["pop_size"],
-                                        elite_percent=EXP_GA_DATA["elite_percent"],
-                                        mutation_rate=EXP_GA_DATA["mutation_rate"],
-                                        max_stagnation=EXP_GA_DATA["max_stagnation"])
+                                        ga_params=EXP_GA_DATA)
     elif len(EXP_DATA_1) != 0 and len(EXP_DATA_2) != 0 and len(EXP_DATA_3) != 0:
         experiments = ExperimentCreator(output_dir=OUTPUT_DIR,
                                         params_1=EXP_DATA_1,
                                         params_2=EXP_DATA_2,
                                         params_3=EXP_DATA_3,
-                                        pop_size=EXP_GA_DATA["pop_size"],
-                                        elite_percent=EXP_GA_DATA["elite_percent"],
-                                        mutation_rate=EXP_GA_DATA["mutation_rate"],
-                                        max_stagnation=EXP_GA_DATA["max_stagnation"])
+                                        ga_params=EXP_GA_DATA)
     else:
         print_comment('параметри за замовчуванням')
         experiments = ExperimentCreator(output_dir=OUTPUT_DIR)
@@ -590,7 +668,6 @@ def experiment_mode(choice):
     exp_choice = menu_input(EXPERIMENT_DESC)
 
     exp_list = [False, False, False]
-    default_params = False
 
     if exp_choice == 0:
         exp_list[0] = True
@@ -599,10 +676,16 @@ def experiment_mode(choice):
     elif exp_choice == 2:
         exp_list[2] = True
     else:
-        if exp_choice == 4: default_params = True
         exp_list[0] = True
         exp_list[1] = True
         exp_list[2] = True
+
+    # Питаємо про параметри
+    print()
+    print_subtitle("Параметри експерименту")
+    print_options(PARAMS_CHOICE, False)
+    params_choice = menu_input(PARAMS_CHOICE)
+    default_params = (params_choice == 0)
 
     run_experiments(exp_list, default_params)
     show_experiment_results()
@@ -614,28 +697,127 @@ def experiment_mode(choice):
 
 ######################### ІНДИВІДУАЛЬНА ЗАДАЧА
 ######## РОЗВ'ЯЗОК
+def format_scenarios(y_matrix):
+    """Форматує матрицю сценаріїв у читабельний вигляд."""
+    result = []
+    for i, row in enumerate(y_matrix):
+        selected = [t + 1 for t, val in enumerate(row) if val == 1]
+        if selected:
+            result.append(f"Постачальник {i + 1}: сценарій {selected[0]}")
+        else:
+            result.append(f"Постачальник {i + 1}: без розширення")
+    return result
+
+
+def print_transport_plan(x_matrix, title="Транспортний план"):
+    """Виводить транспортний план у компактному вигляді."""
+    print_subtitle(title)
+
+    # Збираємо ненульові перевезення
+    shipments = []
+    for i, row in enumerate(x_matrix):
+        for j, val in enumerate(row):
+            if val > 0:
+                shipments.append(f"A{i+1}→B{j+1}: {int(val)}")
+
+    # Виводимо по 4 в рядок
+    if shipments:
+        for i in range(0, len(shipments), 4):
+            chunk = shipments[i:i+4]
+            print("  " + "   ".join(chunk))
+    else:
+        print("  (немає перевезень)")
+
+
+def print_scenarios_table(y_matrix, title="Обрані сценарії"):
+    """Виводить обрані сценарії у вигляді таблиці."""
+    table = Table(title=title, show_header=True, header_style="bold cyan")
+    table.add_column("Постачальник", style="bold")
+    table.add_column("Сценарій", justify="center")
+
+    for i, row in enumerate(y_matrix):
+        selected = [t + 1 for t, val in enumerate(row) if val == 1]
+        scenario_str = str(selected[0]) if selected else "-"
+        table.add_row(f"A{i + 1}", scenario_str)
+
+    console.print(table)
+
+
 def solve_task(task_data, ga_data):
+    import time
+    global GREEDY_RESULT, GA_RESULT
+
+    # Жадібний алгоритм
     print_title('Жадібний алгоритм')
+    start_time = time.time()
     greedy_algo = GreedyAlgorithm(task_data)
     greedy_res = greedy_algo.run()
-    print_success(f"Обрані сценарії розширення: {greedy_res[0]}")
-    print_success(f"Обсяг продукції: {greedy_res[1]}")
-    print_success(f"Значення ЦФ: {greedy_res[-1]}")
+    greedy_time = time.time() - start_time
+
+    if greedy_res:
+        greedy_x, greedy_y, greedy_cost = greedy_res
+        GREEDY_RESULT = (greedy_x, greedy_y, greedy_cost, greedy_time)
+        print_scenarios_table(greedy_y, "Жадібний: обрані сценарії")
+        print()
+        print_transport_plan(greedy_x, "Жадібний: транспортний план")
+    else:
+        greedy_cost = None
+        GREEDY_RESULT = None
+        print_error("Розв'язок не знайдено")
     print()
 
+    # Генетичний алгоритм
     print_title('Генетичний алгоритм')
+    print_comment(f"Параметри: pop_size={ga_data['pop_size']}, mutation={ga_data['mutation_rate']}, elite={ga_data['elite_percent']}, stagnation={ga_data['max_stagnation']}")
+    start_time = time.time()
     genetic_algo = GeneticAlgorithm(task_data,
                                     ga_data["pop_size"],
                                     ga_data["mutation_rate"],
                                     ga_data["elite_percent"],
                                     ga_data["max_stagnation"])
     best_res, _ = genetic_algo.run()
-    print_success(f"Обрані сценарії розширення: {best_res.chromosome}")
-    print_success(f"Обсяг продукції: {best_res.transport_plan}")
-    print_success(f"Значення ЦФ: {best_res.fitness}")
+    ga_time = time.time() - start_time
+
+    GA_RESULT = (best_res.transport_plan, best_res.chromosome, best_res.fitness, ga_time)
+
+    print_scenarios_table(best_res.chromosome, "GA: обрані сценарії")
+    print()
+    print_transport_plan(best_res.transport_plan, "GA: транспортний план")
     print()
 
+    # Порівняльна таблиця
+    print_comparison_table(greedy_cost, greedy_time, best_res.fitness, ga_time)
+
     return
+
+
+def print_comparison_table(greedy_cost, greedy_time, ga_cost, ga_time):
+    """Виводить порівняльну таблицю результатів."""
+    print_title('Порівняння результатів')
+    comparison = Table(show_header=True, header_style="bold magenta")
+    comparison.add_column("Алгоритм", style="bold")
+    comparison.add_column("Значення ЦФ", justify="right")
+    comparison.add_column("Час (с)", justify="right")
+    comparison.add_column("", justify="center")
+
+    greedy_cost_str = f"{greedy_cost:.0f}" if greedy_cost else "N/A"
+
+    # Визначаємо переможця
+    if greedy_cost and ga_cost:
+        if greedy_cost < ga_cost:
+            greedy_mark, ga_mark = "[green]winner[/green]", ""
+        elif ga_cost < greedy_cost:
+            greedy_mark, ga_mark = "", "[green]winner[/green]"
+        else:
+            greedy_mark, ga_mark = "[yellow]tie[/yellow]", "[yellow]tie[/yellow]"
+    else:
+        greedy_mark, ga_mark = "", ""
+
+    comparison.add_row("Жадібний", greedy_cost_str, f"{greedy_time:.3f}", greedy_mark)
+    comparison.add_row("Генетичний", f"{ga_cost:.0f}", f"{ga_time:.3f}", ga_mark)
+
+    console.print(comparison)
+    print()
 
 @app.command(short_help="налаштування та розв'язання індивідуальної задачі")
 def task_mode(choice):

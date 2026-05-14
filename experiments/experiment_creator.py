@@ -1,9 +1,10 @@
 import time
+from datetime import datetime
 import matplotlib.pyplot as plt
 import os
 import numpy as np
 import statistics as stats
-from experiments.config import BASE_PARAMS_1, BASE_PARAMS_2, BASE_PARAMS_3
+from defaults import EXPERIMENT_1_DEFAULTS, EXPERIMENT_2_DEFAULTS, EXPERIMENT_3_DEFAULTS, GA_DEFAULTS
 from genetic_algorithm.genetic_algo import GeneticAlgorithm
 from greedy_algorithm.greedy_algo import GreedyAlgorithm
 from generator.task_generator import TaskGenerator
@@ -20,30 +21,39 @@ DPI = 300
 
 class ExperimentCreator:
     def __init__(self, output_dir,
-                 params_1=BASE_PARAMS_1,
-                 params_2=BASE_PARAMS_2,
-                 params_3=BASE_PARAMS_3,
-                 pop_size=2,
-                 elite_percent=0.5,
-                 mutation_rate=0.5,
-                 max_stagnation=5):
+                 params_1=EXPERIMENT_1_DEFAULTS,
+                 params_2=EXPERIMENT_2_DEFAULTS,
+                 params_3=EXPERIMENT_3_DEFAULTS,
+                 ga_params=GA_DEFAULTS):
+        # Параметри експерименту 1
         self.fixed_generations = params_1["fixed_generations"]
 
+        # Параметри експерименту 2
         self.pop_size_list = params_2["pop_size_list"]
         self.K_2 = params_2["K"]
 
+        # Параметри експерименту 3
         self.v_scale = params_3["v_scale"]
         self.K_3 = params_3["K"]
 
-        self.pop_size = pop_size
-        self.elite_percent = elite_percent
-        self.mutation_rate = mutation_rate
-        self.max_stagnation = max_stagnation
+        # Параметри GA
+        self.pop_size = ga_params["pop_size"]
+        self.elite_percent = ga_params["elite_percent"]
+        self.mutation_rate = ga_params["mutation_rate"]
+        self.max_stagnation = ga_params["max_stagnation"]
 
         self.time_start = 0
         self.time_elapsed = 0
 
         self.output_dir = output_dir
+
+        # Timestamp для унікальних імен файлів (створюється один раз при ініціалізації)
+        self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    def _get_plot_path(self, name):
+        """Генерує шлях до файлу з timestamp."""
+        filename = f"{name}_{self.timestamp}.png"
+        return os.path.join(self.output_dir, filename)
 
     def start_time(self):
         self.time_start = time.time()
@@ -86,7 +96,7 @@ class ExperimentCreator:
             plt.ylabel("Значення ЦФ")
             plt.grid(alpha=0.3)
 
-            plot_path = os.path.join(self.output_dir, "experiment_1_" + name + ".png")
+            plot_path = self._get_plot_path("experiment_1_" + name)
             plt.savefig(plot_path, dpi=DPI)
 
             plt.show()
@@ -123,7 +133,7 @@ class ExperimentCreator:
             ax.set_xticks(x + width, x_classes)
             ax.legend(loc='lower right')
 
-            plot_path = os.path.join(self.output_dir, name + ".png")
+            plot_path = self._get_plot_path(name)
             plt.savefig(plot_path, dpi=DPI)
 
             plt.show()
@@ -181,7 +191,7 @@ class ExperimentCreator:
             plt.legend()
             plt.grid(alpha=0.3)
 
-            plot_path = os.path.join(self.output_dir, name + ".png")
+            plot_path = self._get_plot_path(name)
             plt.savefig(plot_path, dpi=DPI)
 
             plt.show()

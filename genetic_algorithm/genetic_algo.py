@@ -25,13 +25,12 @@ class GeneticAlgorithm:
         mutation_rate (float): Ймовірність мутації (від 0 до 1).
         elite_percent (float): Частка елітних особин (від 0 до 1).
         max_stagnation (int): Максимальна кількість ітерацій без покращення.
-        tournament_size (int): Розмір турніру при селекції.
         """
-        self.a = task_data["a"]
-        self.b = task_data["b"]
-        self.c = task_data["c"]
-        self.delta_a = task_data["delta_a"]
-        self.k = task_data["k"]
+        self.a = task_data["a"].copy()
+        self.b = task_data["b"].copy()
+        self.c = [row.copy() for row in task_data["c"]]
+        self.delta_a = [row.copy() for row in task_data["delta_a"]]
+        self.k = [row.copy() for row in task_data["k"]]
         self.budget = task_data["budget"]
 
         self.m = len(self.a)

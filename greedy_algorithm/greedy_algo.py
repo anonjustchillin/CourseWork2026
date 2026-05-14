@@ -9,11 +9,12 @@ class GreedyAlgorithm:
         Параметри:
         task_data (dict): Вхідні дані задачі (a, b, c, delta_a, k, budget).
         """
-        self.a = task_data["a"]
-        self.b = task_data["b"]
-        self.c = task_data["c"]
-        self.delta_a = task_data["delta_a"]
-        self.k = task_data["k"]
+        # Копії даних, щоб не модифікувати оригінал
+        self.a = task_data["a"].copy()
+        self.b = task_data["b"].copy()
+        self.c = [row.copy() for row in task_data["c"]]
+        self.delta_a = [row.copy() for row in task_data["delta_a"]]
+        self.k = [row.copy() for row in task_data["k"]]
         self.budget = task_data["budget"]
 
         self.m = len(self.a)
