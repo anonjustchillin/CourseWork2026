@@ -72,25 +72,21 @@ class ExperimentCreator:
 
             self.fixed_generations = int(self.fixed_generations)
 
-            record_log = []
-            for k in range(1, self.fixed_generations+1):
-                #print(f'k={k}')
-                curr_solution = GeneticAlgorithm(curr_task_data, self.pop_size, self.mutation_rate, self.elite_percent, self.max_stagnation)
-                best, _ = curr_solution.run(self.fixed_generations)
-                record_log.append(best.fitness)
+            curr_solution = GeneticAlgorithm(curr_task_data, self.pop_size, self.mutation_rate, self.elite_percent, self.max_stagnation)
+            _, record_log = curr_solution.run(self.fixed_generations)
 
             return record_log
 
         def plot_result(x_max, y, name=''):
-            x = np.arange(1, x_max+1, 1)
+            x = np.arange(0, x_max+1, 1)
             plt.figure(figsize=(12, 5))
             plt.plot(x, y)
-            plt.title("Зміна значення ЦФ від кількості ітерації генетичного алгоритму")
+            plt.title(f'Зміна значення ЦФ від кількості ітерації генетичного алгоритму ({l})')
             plt.xlabel("Номер ітерації")
             plt.ylabel("Значення ЦФ")
             plt.grid(alpha=0.3)
 
-            plot_path = os.path.join(self.output_dir, name + ".png")
+            plot_path = os.path.join(self.output_dir, "experiment_1_" + name + ".png")
             plt.savefig(plot_path, dpi=DPI)
 
             plt.show()
@@ -101,7 +97,7 @@ class ExperimentCreator:
         for l in ["S1", "S2", "S3"]:
             print(f'l={l}')
             record_log = trial(r_class_name, b_class_name, l)
-            plot_result(self.fixed_generations, record_log, f"experiment_1_{l}")
+            plot_result(self.fixed_generations, record_log, l)
             results[l] = record_log
 
         return results
