@@ -411,6 +411,48 @@ def show_task(choice):
 
 ######################### ВИВІД РЕЗУЛЬТАТІВ ЗАДАЧІ
 ######## ПОКАЗ ТА ЗБЕРЕЖЕННЯ РЕЗУЛЬТАТІВ
+def save_results_to_file():
+    """Зберігає результати обох алгоритмів у JSON-файл."""
+    results = {}
+
+    if GREEDY_RESULT:
+        greedy_x, greedy_y, greedy_cost, greedy_time = GREEDY_RESULT
+        results["greedy"] = {
+            "transport_plan": greedy_x,
+            "scenarios": greedy_y,
+            "objective_value": greedy_cost,
+            "time": greedy_time,
+        }
+
+    if GA_RESULT:
+        ga_x, ga_y, ga_cost, ga_time = GA_RESULT
+        results["genetic"] = {
+            "transport_plan": ga_x,
+            "scenarios": ga_y,
+            "objective_value": ga_cost,
+            "time": ga_time,
+        }
+
+    while True:
+        filename = input("Введіть назву файлу для збереження результатів: ").strip()
+        if filename:
+            break
+        print_error(INCORRECT_DATA)
+
+    if not filename.endswith(".json"):
+        filename += ".json"
+
+    if not os.path.exists(DEFAULT_FOLDER):
+        os.mkdir(DEFAULT_FOLDER)
+
+    file_path = os.path.join(DEFAULT_FOLDER, filename)
+
+    with open(file_path, "w", encoding="utf-8") as file:
+        json.dump(results, file, ensure_ascii=False, indent=2)
+
+    print_success(f"Результати збережено: {file_path}")
+
+
 def show_task_results(choice):
     print_title(MAIN_MENU[choice])
 
@@ -443,6 +485,23 @@ def show_task_results(choice):
             ga_cost = GA_RESULT[2]
             ga_time = GA_RESULT[3]
             print_comparison_table(greedy_cost, greedy_time, ga_cost, ga_time)
+
+        # Запит на збереження результатів у файл
+        print_subtitle("Зберегти результати у файл?")
+        print("  1 -- Так")
+        print("  2 -- Ні")
+        while True:
+            try:
+                save_choice = int(input(CHOICE_STR))
+                if save_choice in [1, 2]:
+                    break
+                print_error(ERROR_MESS)
+            except ValueError:
+                print_error(ERROR_MESS)
+
+        if save_choice == 1:
+            save_results_to_file()
+        print()
 
     print_options(RETURN_TO_MAIN)
     choice = menu_input(RETURN_TO_MAIN)
