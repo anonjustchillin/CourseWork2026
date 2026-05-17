@@ -125,7 +125,7 @@ class GeneticAlgorithm:
 
         return parent_pool
 
-    def run(self, fixed_generations=None):
+    def run(self, fixed_generations=None, verbose=True):
         """
         Запускає головний еволюційний цикл.
 
@@ -133,6 +133,8 @@ class GeneticAlgorithm:
         fixed_generations (int): Якщо задано, алгоритм виконає рівно цю кількість
                 ітерацій (режим GA_fixed для експериментів).
                 Якщо None, працює до досягнення max_stagnation.
+        verbose (bool): Якщо True, друкує повідомлення про нові рекорди (лише в
+                режимі stagnation). У пакетних експериментах варто вимкнути.
 
         Повертає:
         tuple: (x, y, Z) — план перевезень, матриця сценаріїв, значення ЦФ.
@@ -198,7 +200,7 @@ class GeneticAlgorithm:
 
             if best.fitness < prev_best_fitness:
                 stagnation_counter = 0
-                if fixed_generations is None:
+                if verbose and fixed_generations is None:
                     print(f"Покоління {generation}: новий рекорд {best.fitness:.2f}")
             else:
                 stagnation_counter += 1

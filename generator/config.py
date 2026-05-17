@@ -9,7 +9,7 @@ BASE_CONSTANTS = {
     "a_mean": 100.0,
     "d_var": 0.3,
     "delta_a_var": 0.4,
-    "mu": 10.0,
+    "mu": 1.0,
     "k_var": 0.2
 }
 

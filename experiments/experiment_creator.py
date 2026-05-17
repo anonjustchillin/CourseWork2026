@@ -42,7 +42,7 @@ def _exp2_worker(args):
     for pop_size_i in pop_size_list:
         ga = GeneticAlgorithm(curr_task_data, pop_size_i,
                               mutation_rate, elite_percent, max_stagnation)
-        _, _, fitness = ga.run()
+        _, _, fitness = ga.run(verbose=False)
         fitness_by_pop[pop_size_i] = fitness
     return class_idx, fitness_by_pop
 
@@ -63,7 +63,7 @@ def _exp3_worker(args):
 
     t0 = time.time()
     _, _, ga_fitness = GeneticAlgorithm(curr_task_data, pop_size,
-                                        mutation_rate, elite_percent, max_stagnation).run()
+                                        mutation_rate, elite_percent, max_stagnation).run(verbose=False)
     genetic_t = time.time() - t0
 
     return v_idx, greedy_t, greedy_res[-1], genetic_t, ga_fitness
@@ -233,7 +233,7 @@ class ExperimentCreator:
 
         return
 
-    def run_experiment_3(self, r_class_name="R2", b_class_name="B2"):
+    def run_experiment_3(self, r_class_name="R1", b_class_name="B1"):
         def plot_result(x, y1, y2, y_name='', name=''):
             plt.figure(figsize=(12, 5))
             plt.plot(x, y1, label='Жадібний алгоритм')
