@@ -73,6 +73,8 @@ def calculate_vam(a, b, c):
             x[i_1][j_1] = a_copy[i_1]
             a_copy[i_1] = 0
             b_copy[j_1] = 0
+            active_rows.clear()
+            active_cols.clear()
         else:
             if len(active_rows) == 1 and len(active_cols) > 1:
                 i_1 = active_rows[0]
@@ -80,11 +82,15 @@ def calculate_vam(a, b, c):
                     x[i_1][j] = b_copy[j]
                     b_copy[j] = 0
                 a_copy[i_1] = 0
+                active_rows.clear()
+                active_cols.clear()
             elif len(active_rows) > 1 and len(active_cols) == 1:
                 j_1 = active_cols[0]
                 for i in active_rows:
                     x[i][j_1] = a_copy[i]
                     a_copy[i] = 0
                 b_copy[j_1] = 0
+                active_rows.clear()
+                active_cols.clear()
 
     return x

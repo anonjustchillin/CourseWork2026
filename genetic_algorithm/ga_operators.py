@@ -89,16 +89,14 @@ def _calculate_total_expansion(y, delta_a):
         for t in range(len(y[i]))
     )
 
+def _calculate_total_cost(y, k):
+    """Розраховує сумарні витрати на обрані сценарії розширення."""
+    return sum(y[i][t] * k[i][t] for i in range(len(y)) for t in range(len(y[i])))
 
-def _get_inactive_scenarios(y):
-    """Повертає список пар (i, t) для постачальників без активного сценарію."""
-    result = []
-    for i in range(len(y)):
-        if sum(y[i]) == 0:
-            for t in range(len(y[i])):
-                result.append((i, t))
-    return result
 
+def _get_active_scenarios(y):
+    """Повертає список пар (i, t) для всіх активних сценаріїв (y[i][t] == 1)."""
+    return [(i, t) for i in range(len(y)) for t in range(len(y[i])) if y[i][t] == 1]
 
 def crossover(parent1_y, parent2_y):
     """
@@ -145,13 +143,3 @@ def mutate(y, mutation_rate, q):
         y[i][new_scenario] = 1
 
     return y
-
-
-def _calculate_total_cost(y, k):
-    """Розраховує сумарні витрати на обрані сценарії розширення."""
-    return sum(y[i][t] * k[i][t] for i in range(len(y)) for t in range(len(y[i])))
-
-
-def _get_active_scenarios(y):
-    """Повертає список пар (i, t) для всіх активних сценаріїв (y[i][t] == 1)."""
-    return [(i, t) for i in range(len(y)) for t in range(len(y[i])) if y[i][t] == 1]

@@ -9,7 +9,6 @@ class Individual:
         """
         self.chromosome = [row[:] for row in chromosome]
         self.fitness = None
-        self.transport_plan = None
 
     def __lt__(self, other):
         """Порівняння за значенням цільової функції (для сортування популяції)."""

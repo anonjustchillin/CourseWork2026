@@ -1,13 +1,72 @@
 import time
 from datetime import datetime
+from multiprocessing import Pool
 import matplotlib.pyplot as plt
 import os
 import numpy as np
 import statistics as stats
-from defaults import EXPERIMENT_1_DEFAULTS, EXPERIMENT_2_DEFAULTS, EXPERIMENT_3_DEFAULTS, GA_DEFAULTS
+from defaults import (EXPERIMENT_1_DEFAULTS, EXPERIMENT_2_DEFAULTS, EXPERIMENT_3_DEFAULTS,
+                      GA_EXPERIMENT_1_DEFAULTS, GA_EXPERIMENT_2_DEFAULTS, GA_EXPERIMENT_3_DEFAULTS)
 from genetic_algorithm.genetic_algo import GeneticAlgorithm
 from greedy_algorithm.greedy_algo import GreedyAlgorithm
 from generator.task_generator import TaskGenerator
+
+
+def _exp1_worker(args):
+    """Один прогін експерименту 1: одна задача (S-клас), GA на fixed_generations ітерацій.
+
+    Виконується в окремому процесі, тому має бути на рівні модуля (picklable).
+    """
+    (s_class, r_class, b_class, fixed_generations,
+     pop_size, mutation_rate, elite_percent) = args
+
+    curr_task_data = TaskGenerator().generate(r_class, b_class, s_class_name=s_class)
+
+    ga = GeneticAlgorithm(curr_task_data, pop_size, mutation_rate, elite_percent)
+    ga.run(fixed_generations)
+
+    return s_class, ga.history
+
+
+def _exp2_worker(args):
+    """Один прогін експерименту 2: одна задача (class, k), всі pop_size на ній.
+
+    Виконується в окремому процесі, тому має бути на рівні модуля (picklable).
+    """
+    (class_idx, r_class, b_class, s_class, pop_size_list,
+     mutation_rate, elite_percent, max_stagnation) = args
+
+    curr_task_data = TaskGenerator().generate(r_class, b_class, s_class_name=s_class)
+
+    fitness_by_pop = {}
+    for pop_size_i in pop_size_list:
+        ga = GeneticAlgorithm(curr_task_data, pop_size_i,
+                              mutation_rate, elite_percent, max_stagnation)
+        _, _, fitness = ga.run(verbose=False)
+        fitness_by_pop[pop_size_i] = fitness
+    return class_idx, fitness_by_pop
+
+
+def _exp3_worker(args):
+    """Один прогін експерименту 3: одна задача (v, k), обидва алгоритми на ній.
+
+    Виконується в окремому процесі, тому має бути на рівні модуля (picklable).
+    """
+    (v_idx, r_class, b_class, m, n, q,
+     pop_size, mutation_rate, elite_percent, max_stagnation) = args
+
+    curr_task_data = TaskGenerator().generate(r_class, b_class, m=m, n=n, q=q)
+
+    t0 = time.time()
+    greedy_res = GreedyAlgorithm(curr_task_data).run()
+    greedy_t = time.time() - t0
+
+    t0 = time.time()
+    _, _, ga_fitness = GeneticAlgorithm(curr_task_data, pop_size,
+                                        mutation_rate, elite_percent, max_stagnation).run(verbose=False)
+    genetic_t = time.time() - t0
+
+    return v_idx, greedy_t, greedy_res[-1], genetic_t, ga_fitness
 
 
 """
@@ -17,14 +76,14 @@ from generator.task_generator import TaskGenerator
 3. дослідження впливу розмірності задач на точність та час роботи жадібного та генетичного GA алгоритмів.
 """
 
-DPI = 300
-
 class ExperimentCreator:
     def __init__(self, output_dir,
                  params_1=EXPERIMENT_1_DEFAULTS,
                  params_2=EXPERIMENT_2_DEFAULTS,
                  params_3=EXPERIMENT_3_DEFAULTS,
-                 ga_params=GA_DEFAULTS):
+                 ga_params_1=GA_EXPERIMENT_1_DEFAULTS,
+                 ga_params_2=GA_EXPERIMENT_2_DEFAULTS,
+                 ga_params_3=GA_EXPERIMENT_3_DEFAULTS):
         # Параметри експерименту 1
         self.fixed_generations = params_1["fixed_generations"]
 
@@ -36,11 +95,10 @@ class ExperimentCreator:
         self.v_scale = params_3["v_scale"]
         self.K_3 = params_3["K"]
 
-        # Параметри GA
-        self.pop_size = ga_params["pop_size"]
-        self.elite_percent = ga_params["elite_percent"]
-        self.mutation_rate = ga_params["mutation_rate"]
-        self.max_stagnation = ga_params["max_stagnation"]
+        # Параметри GA (окремо для кожного експерименту)
+        self.ga_params_1 = ga_params_1
+        self.ga_params_2 = ga_params_2
+        self.ga_params_3 = ga_params_3
 
         self.time_start = 0
         self.time_elapsed = 0
@@ -63,57 +121,44 @@ class ExperimentCreator:
         self.time_elapsed = time_end - self.time_start
 
     def run_experiment_1(self, r_class_name="R2", b_class_name="B2"):
-        #print('Експеримент 1 !!!!')
-        def trial(r_class_name, b_class_name, s_class_name):
-            """
-            Параметри:
-            class_name (str): Назва класу (наприклад, "R1-B1").
-            s_class_name (str): Назва S класу (наприклад, "S1").
-            fixed_generations (int): Максимальна кількість ітерацій (режим GA_fixed для експериментів).
-            pop_size (int): Розмір популяції (парне число).
-            elite_percent (float): Частка елітних особин (від 0 до 1).
-            mutation_rate (float): Ймовірність мутації (від 0 до 1).
-            """
-
-            curr_task = TaskGenerator()
-            curr_task_data = curr_task.generate(r_class_name, b_class_name, s_class_name=s_class_name)
-            #print('A task was generated')
-            #print(curr_task_data)
-
-            self.fixed_generations = int(self.fixed_generations)
-
-            curr_solution = GeneticAlgorithm(curr_task_data, self.pop_size, self.mutation_rate, self.elite_percent, self.max_stagnation)
-            _, record_log = curr_solution.run(self.fixed_generations)
-
-            return record_log
-
-        def plot_result(x_max, y, name=''):
+        def plot_result(x_max, y, s_class):
             x = np.arange(0, x_max+1, 1)
             plt.figure(figsize=(12, 5))
             plt.plot(x, y)
-            plt.title(f'Зміна значення ЦФ від кількості ітерації генетичного алгоритму ({l})')
+            plt.title(f'Зміна значення ЦФ від кількості ітерації генетичного алгоритму ({s_class})')
             plt.xlabel("Номер ітерації")
             plt.ylabel("Значення ЦФ")
             plt.grid(alpha=0.3)
 
-            plot_path = self._get_plot_path("experiment_1_" + name)
-            plt.savefig(plot_path, dpi=DPI)
+            plot_path = self._get_plot_path("experiment_1_" + s_class)
+            plt.savefig(plot_path, dpi=300)
 
             plt.show()
             plt.close()
-            return
+
+        self.fixed_generations = int(self.fixed_generations)
+
+        s_classes = ["S1", "S2", "S3"]
+        jobs = [
+            (s, r_class_name, b_class_name, self.fixed_generations,
+             self.ga_params_1["pop_size"],
+             self.ga_params_1["mutation_rate"],
+             self.ga_params_1["elite_percent"])
+            for s in s_classes
+        ]
 
         results = {}
-        for l in ["S1", "S2", "S3"]:
-            print(f'l={l}')
-            record_log = trial(r_class_name, b_class_name, l)
-            plot_result(self.fixed_generations, record_log, l)
-            results[l] = record_log
+        with Pool(min(3, os.cpu_count() or 1)) as pool:
+            for s_class, history in pool.imap_unordered(_exp1_worker, jobs):
+                print(f'l={s_class} готово')
+                results[s_class] = history
+
+        for s in s_classes:
+            plot_result(self.fixed_generations, results[s], s)
 
         return results
 
     def run_experiment_2(self):
-        #print('Експеримент 2 !!!!')
         def plot_result(data, class_names, name=''):
             x_classes = [class_name[0]+"-"+class_name[1] for class_name in class_names]
             x = np.arange(len(x_classes))
@@ -134,7 +179,7 @@ class ExperimentCreator:
             ax.legend(loc='lower right')
 
             plot_path = self._get_plot_path(name)
-            plt.savefig(plot_path, dpi=DPI)
+            plt.savefig(plot_path, dpi=300)
 
             plt.show()
             plt.close()
@@ -158,29 +203,37 @@ class ExperimentCreator:
         pop_size_labels = ["I="+str(i) for i in self.pop_size_list]
         results = {i: [] for i in pop_size_labels}
 
-        for class_name in class_names:
-            #print(class_name)
-            r_class_name, b_class_name = class_name
-            results_k = {i: [] for i in self.pop_size_list}
-            for k in range(1, K+1):
-                #print(f'k={k}')
-                curr_task = TaskGenerator()
-                curr_task_data = curr_task.generate(r_class_name, b_class_name, s_class_name=s_class_name)
-                for pop_size_i in self.pop_size_list:
-                    #print(f'pop_size={pop_size_i}')
-                    curr_solution = GeneticAlgorithm(curr_task_data, pop_size_i, self.mutation_rate, self.elite_percent, self.max_stagnation)
-                    best_res, _ = curr_solution.run()
-                    results_k[pop_size_i].append(best_res.fitness)
+        jobs = []
+        for class_idx, (r_class_name, b_class_name) in enumerate(class_names):
+            for k in range(K):
+                jobs.append((class_idx, r_class_name, b_class_name, s_class_name,
+                             self.pop_size_list,
+                             self.ga_params_2["mutation_rate"],
+                             self.ga_params_2["elite_percent"],
+                             self.ga_params_2["max_stagnation"]))
 
+        # results_k_by_class[class_idx][pop_size] -> список значень fitness
+        results_k_by_class = {
+            ci: {p: [] for p in self.pop_size_list} for ci in range(len(class_names))
+        }
+
+        with Pool(min(18, os.cpu_count() or 1)) as pool:
+            for class_idx, fitness_by_pop in pool.imap_unordered(_exp2_worker, jobs):
+                for pop_size_i, fit in fitness_by_pop.items():
+                    results_k_by_class[class_idx][pop_size_i].append(fit)
+
+        # збираємо результати в порядку класів (процеси завершуються не по черзі)
+        for class_idx in range(len(class_names)):
             for pop_size_i in self.pop_size_list:
-                results["I="+str(pop_size_i)].append(stats.fmean(results_k[pop_size_i]))
+                results["I="+str(pop_size_i)].append(
+                    stats.fmean(results_k_by_class[class_idx][pop_size_i])
+                )
 
         plot_result(results, class_names, f"experiment_2")
 
         return
 
-    def run_experiment_3(self, r_class_name="R2", b_class_name="B2"):
-        #print('Експеримент 3 !!!!')
+    def run_experiment_3(self, r_class_name="R1", b_class_name="B1"):
         def plot_result(x, y1, y2, y_name='', name=''):
             plt.figure(figsize=(12, 5))
             plt.plot(x, y1, label='Жадібний алгоритм')
@@ -192,7 +245,7 @@ class ExperimentCreator:
             plt.grid(alpha=0.3)
 
             plot_path = self._get_plot_path(name)
-            plt.savefig(plot_path, dpi=DPI)
+            plt.savefig(plot_path, dpi=300)
 
             plt.show()
             plt.close()
@@ -205,61 +258,48 @@ class ExperimentCreator:
             mutation_rate (float): Ймовірність мутації (від 0 до 1).
         """
 
-        m = 5
-        n = 10
-        q = 2
+        base_m = 5
+        base_n = 10
+        base_q = 2
         K = self.K_3
+
+        jobs = []
+        for v_idx, v in enumerate(self.v_scale):
+            m = int(base_m*v)
+            n = int(base_n*v)
+            q = int(base_q*v)
+            for k in range(K):
+                jobs.append((v_idx, r_class_name, b_class_name, m, n, q,
+                             self.ga_params_3["pop_size"],
+                             self.ga_params_3["mutation_rate"],
+                             self.ga_params_3["elite_percent"],
+                             self.ga_params_3["max_stagnation"]))
+
+        # results_by_v[v_idx] -> {'greedy_t': [], 'greedy_r': [], 'genetic_t': [], 'genetic_r': []}
+        results_by_v = {
+            vi: {'greedy_t': [], 'greedy_r': [], 'genetic_t': [], 'genetic_r': []}
+            for vi in range(len(self.v_scale))
+        }
+
+        with Pool(min(18, os.cpu_count() or 1)) as pool:
+            for v_idx, gt, gr, et, er in pool.imap_unordered(_exp3_worker, jobs):
+                results_by_v[v_idx]['greedy_t'].append(gt)
+                results_by_v[v_idx]['greedy_r'].append(gr)
+                results_by_v[v_idx]['genetic_t'].append(et)
+                results_by_v[v_idx]['genetic_r'].append(er)
 
         greedy_time = []
         genetic_time = []
-
         greedy_results = []
         genetic_results = []
+        for v_idx in range(len(self.v_scale)):
+            greedy_time.append(stats.fmean(results_by_v[v_idx]['greedy_t']))
+            genetic_time.append(stats.fmean(results_by_v[v_idx]['genetic_t']))
+            greedy_results.append(stats.fmean(results_by_v[v_idx]['greedy_r']))
+            genetic_results.append(stats.fmean(results_by_v[v_idx]['genetic_r']))
 
-        for v in self.v_scale:
-            #print(f'v={v}')
-            m = int(m*v)
-            n = int(n*v)
-            q = int(q*v)
-
-            greedy_time_k = []
-            genetic_time_k = []
-
-            greedy_results_k = []
-            genetic_results_k = []
-
-            for k in range(1, K+1):
-                #print(f'k={k}')
-                curr_task = TaskGenerator()
-                curr_task_data = curr_task.generate(r_class_name, b_class_name, m=m, n=n, q=q)
-
-                self.start_time()
-                greedy_algo = GreedyAlgorithm(curr_task_data)
-                greedy_res = greedy_algo.run()
-                self.end_time()
-                greedy_time_k.append(self.time_elapsed)
-
-                greedy_results_k.append(greedy_res[-1])
-
-                #if greedy_res is None:
-                #    print('NONE!!!!')
-
-                self.start_time()
-                genetic_algo = GeneticAlgorithm(curr_task_data, self.pop_size, self.mutation_rate, self.elite_percent, self.max_stagnation)
-                best_res, _ = genetic_algo.run()
-                self.end_time()
-                genetic_time_k.append(self.time_elapsed)
-                genetic_results_k.append(best_res.fitness)
-
-            greedy_time.append(sum(greedy_time_k)/K)
-            genetic_time.append(sum(genetic_time_k)/K)
-
-            greedy_results.append(sum(greedy_results_k)/K)
-            genetic_results.append(sum(genetic_results_k)/K)
-
-        plot_result(self.v_scale, greedy_time, genetic_time, y_name='час роботи', name=f"experiment_3_greedy")
-        plot_result(self.v_scale, greedy_results, genetic_results, y_name='точність', name=f"experiment_3_genetic")
-
+        plot_result(self.v_scale, greedy_time, genetic_time, y_name='час роботи', name="experiment_3_time")
+        plot_result(self.v_scale, greedy_results, genetic_results, y_name='значення цільової функції', name="experiment_3_objective")
 
         return
 
