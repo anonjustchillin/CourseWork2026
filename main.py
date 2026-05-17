@@ -291,29 +291,84 @@ def generate_data(getGA=True):
     return
 
 def read_data():
+    INPUT_DIR = 'input'
+
     def get_input():
+        files = [f for f in os.listdir(INPUT_DIR) if f.endswith('.json')]
+        if not files:
+            print_error(f"Папка '{INPUT_DIR}' порожня або не містить JSON-файлів")
+            return None
+        files.sort()
+        print_subtitle(f"JSON-файли у папці '{INPUT_DIR}':")
+        for i, f in enumerate(files):
+            print(f"  {i + 1} -- {f}")
         while True:
             try:
-                data_path = input(f'Введіть шлях до json-файлу з даними: ')
-                if not os.path.exists(data_path):
-                    print_error(NO_FILE)
-                    continue
-                break
-            except ValueError or FileNotFoundError:
-                print_error(NO_FILE)
-        return data_path
+                choice = int(input(CHOICE_STR)) - 1
+                if 0 <= choice < len(files):
+                    return os.path.join(INPUT_DIR, files[choice])
+                print_error(ERROR_MESS)
+            except ValueError:
+                print_error(ERROR_MESS)
+
+    def get_value(name):
+        while True:
+            try:
+                if name in INT_ONLY:
+                    return int(input(f'Введіть {name}: '))
+                else:
+                    return float(input(f'Введіть {name}: '))
+            except ValueError:
+                print_error(INCORRECT_DATA)
+
+    def ask_ga():
+        global GA_DATA
+        recommended = get_ga_params()
+        print_subtitle("Використати параметри GA за замовчуванням?")
+        print(f"  1 -- Так: pop_size={recommended['pop_size']}, mutation={recommended['mutation_rate']}, elite={recommended['elite_percent']}, stagnation={recommended['max_stagnation']}")
+        print("  2 -- Ні, ввести вручну")
+        while True:
+            try:
+                ga_choice = int(input(CHOICE_STR))
+                if ga_choice in [1, 2]:
+                    break
+                print_error(ERROR_MESS)
+            except ValueError:
+                print_error(ERROR_MESS)
+
+        if ga_choice == 1:
+            for key, value in recommended.items():
+                GA_DATA[key] = value
+        else:
+            for key in GA_PARAMS.keys():
+                if key == 'pop_size':
+                    while True:
+                        value = int(get_value(key + ' (парне число!)'))
+                        if value % 2 == 0:
+                            break
+                        print_error("Має бути парне число!")
+                elif key in ('mutation_rate', 'elite_percent'):
+                    while True:
+                        value = get_value(key + ' (від 0 до 1)')
+                        if 0 <= value <= 1:
+                            break
+                        print_error("Має бути від 0 до 1!")
+                else:
+                    value = int(get_value(key))
+                GA_DATA[key] = value
 
     global DATA, GA_DATA
 
     data_path = get_input()
+    if data_path is None:
+        return
 
+    loaded = False
     with open(data_path, 'r') as file:
         try:
             data = json.load(file)
             data_keys = ["m", "n", "q", "a", "b", "c", "delta_a", "k", "budget"]
-            ga_data_keys = ["pop_size", "mutation_rate", "elite_percent", "max_stagnation"]
 
-            # Валідація даних задачі
             for key in data_keys:
                 if key not in data:
                     print_error(f"Відсутній ключ: {key}")
@@ -335,37 +390,20 @@ def read_data():
                 print_error("Неправильний розмір матриці k")
                 return
 
-            # Записуємо дані задачі
             for key in data_keys:
                 DATA[key] = data[key]
 
-            # Читаємо параметри GA (якщо є)
-            if all(key in data for key in ga_data_keys):
-                if data["pop_size"] % 2 != 0:
-                    print_error("pop_size має бути парним")
-                    return
-                if not (0 <= data["mutation_rate"] <= 1):
-                    print_error("mutation_rate має бути від 0 до 1")
-                    return
-                if not (0 <= data["elite_percent"] <= 1):
-                    print_error("elite_percent має бути від 0 до 1")
-                    return
-
-                for key in ga_data_keys:
-                    GA_DATA[key] = data[key]
-            else:
-                # Використовуємо параметри за замовчуванням
-                recommended = get_ga_params()
-                for key, value in recommended.items():
-                    GA_DATA[key] = value
-                print_comment("Параметри GA встановлено за замовчуванням")
-
             print_success(f"Дані завантажено: m={DATA['m']}, n={DATA['n']}, q={DATA['q']}")
+            loaded = True
 
         except json.decoder.JSONDecodeError:
             print_error("Помилка читання JSON файлу")
         except KeyError as e:
             print_error(f"Відсутній ключ у файлі: {e}")
+
+    if loaded:
+        print()
+        ask_ga()
 
     print()
     return
@@ -626,21 +664,23 @@ def run_experiments(exp_list, default_params):
     if len(EXP_DATA_1) != 0 and len(EXP_DATA_2) == 0 and len(EXP_DATA_3) == 0:
         experiments = ExperimentCreator(output_dir=OUTPUT_DIR,
                                         params_1=EXP_DATA_1,
-                                        ga_params=EXP_GA_DATA)
+                                        ga_params_1=EXP_GA_DATA)
     elif len(EXP_DATA_1) == 0 and len(EXP_DATA_2) != 0 and len(EXP_DATA_3) == 0:
         experiments = ExperimentCreator(output_dir=OUTPUT_DIR,
                                         params_2=EXP_DATA_2,
-                                        ga_params=EXP_GA_DATA)
+                                        ga_params_2=EXP_GA_DATA)
     elif len(EXP_DATA_1) == 0 and len(EXP_DATA_2) == 0 and len(EXP_DATA_3) != 0:
         experiments = ExperimentCreator(output_dir=OUTPUT_DIR,
                                         params_3=EXP_DATA_3,
-                                        ga_params=EXP_GA_DATA)
+                                        ga_params_3=EXP_GA_DATA)
     elif len(EXP_DATA_1) != 0 and len(EXP_DATA_2) != 0 and len(EXP_DATA_3) != 0:
         experiments = ExperimentCreator(output_dir=OUTPUT_DIR,
                                         params_1=EXP_DATA_1,
                                         params_2=EXP_DATA_2,
                                         params_3=EXP_DATA_3,
-                                        ga_params=EXP_GA_DATA)
+                                        ga_params_1=EXP_GA_DATA,
+                                        ga_params_2=EXP_GA_DATA,
+                                        ga_params_3=EXP_GA_DATA)
     else:
         print_comment('параметри за замовчуванням')
         experiments = ExperimentCreator(output_dir=OUTPUT_DIR)
@@ -760,6 +800,8 @@ def solve_task(task_data, ga_data):
         print_scenarios_table(greedy_y, "Жадібний: обрані сценарії")
         print()
         print_transport_plan(greedy_x, "Жадібний: транспортний план")
+        print()
+        print_success(f"Жадібний: ЦФ = {greedy_cost:.0f}, час = {greedy_time:.3f} с")
     else:
         greedy_cost = None
         GREEDY_RESULT = None
@@ -775,18 +817,20 @@ def solve_task(task_data, ga_data):
                                     ga_data["mutation_rate"],
                                     ga_data["elite_percent"],
                                     ga_data["max_stagnation"])
-    best_res, _ = genetic_algo.run()
+    ga_x, ga_y, ga_cost = genetic_algo.run()
     ga_time = time.time() - start_time
 
-    GA_RESULT = (best_res.transport_plan, best_res.chromosome, best_res.fitness, ga_time)
+    GA_RESULT = (ga_x, ga_y, ga_cost, ga_time)
 
-    print_scenarios_table(best_res.chromosome, "GA: обрані сценарії")
+    print_scenarios_table(ga_y, "GA: обрані сценарії")
     print()
-    print_transport_plan(best_res.transport_plan, "GA: транспортний план")
+    print_transport_plan(ga_x, "GA: транспортний план")
+    print()
+    print_success(f"GA: ЦФ = {ga_cost:.0f}, час = {ga_time:.3f} с")
     print()
 
     # Порівняльна таблиця
-    print_comparison_table(greedy_cost, greedy_time, best_res.fitness, ga_time)
+    print_comparison_table(greedy_cost, greedy_time, ga_cost, ga_time)
 
     return
 

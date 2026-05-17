@@ -2,51 +2,49 @@
 Значення за замовчуванням для генетичного алгоритму та експериментів.
 """
 
-# =============================================================================
-# ПАРАМЕТРИ ГЕНЕТИЧНОГО АЛГОРИТМУ
-# =============================================================================
-
-# Дефолтні параметри GA для всіх запусків експериментів, розв'язань
+# Для розв'язання окремої задачі
 GA_DEFAULTS = {
-    "pop_size": 30,
+    "pop_size": 50,
     "mutation_rate": 0.3,
     "elite_percent": 0.2,
     "max_stagnation": 100
 }
 
-
-def get_ga_params():
-    """
-    Повертає параметри GA.
-
-    Повертає:
-        dict: Параметри GA
-    """
-    return GA_DEFAULTS.copy()
-
-# =============================================================================
-# ПАРАМЕТРИ ЕКСПЕРИМЕНТІВ
-# =============================================================================
-
-# Експеримент 1
+# Для експерименту 1
 EXPERIMENT_1_DEFAULTS = {
-    "fixed_generations": 500,
-    "r_class": "R2",
-    "b_class": "B2"
+    "fixed_generations": 500
 }
 
-# Експеримент 2
+GA_EXPERIMENT_1_DEFAULTS = {
+    "pop_size": 50,
+    "mutation_rate": 0.3,
+    "elite_percent": 0.2
+}
+
+# Для експерименту 2
 EXPERIMENT_2_DEFAULTS = {
-    "pop_size_list": [20, 50, 100, 200],
-    "K": 20,
-    "s_class": "S2"
+    "pop_size_list": [20, 50, 100, 150],
+    "K": 5
 }
 
-# Експеримент 3
+GA_EXPERIMENT_2_DEFAULTS = {
+    "mutation_rate": 0.3,
+    "elite_percent": 0.2,
+    "max_stagnation": 150
+}
+
+# Для експерименту 3
 EXPERIMENT_3_DEFAULTS = {
     "v_scale": [1, 2, 4, 6, 8, 10],
-    "K": 30,
-    "base_m": 5,
-    "base_n": 10,
-    "base_q": 2
+    "K": 5
 }
+
+GA_EXPERIMENT_3_DEFAULTS = {
+    "pop_size": 100,
+    "mutation_rate": 0.3,
+    "elite_percent": 0.2,
+    "max_stagnation": 150
+}
+
+def get_ga_params():
+    return GA_DEFAULTS.copy()

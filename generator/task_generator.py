@@ -71,7 +71,7 @@ class TaskGenerator:
         delta_a = []
         for _ in range(m):
             row = [round(random.uniform(delta_a_min, delta_a_max)) for _ in range(q)]
-            row.sort()  # Сценарії мають йти за зростанням потужності
+            # row.sort()  # Сценарії за зростанням потужності
             delta_a.append(row)
 
         # 4. Вартість сценаріїв (k)
