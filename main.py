@@ -565,9 +565,10 @@ def setup_experiments(exp_list, dir_only=False):
         print_subtitle("Експеримент 1. Налаштування")
         global EXP_DATA_1
 
-        for key, value in EXPERIMENT_PARAMS_1.items():
-            value = get_input(key)
-            EXP_DATA_1[key] = value
+        fg = {}
+        for s in ["S1", "S2", "S3"]:
+            fg[s] = int(get_input(f"fixed_generations ({s})"))
+        EXP_DATA_1["fixed_generations"] = fg
 
         print()
         return

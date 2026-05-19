@@ -123,12 +123,36 @@ class ExperimentCreator:
     def run_experiment_1(self, r_class_name="R2", b_class_name="B2"):
         def plot_result(x_max, y, s_class):
             x = np.arange(0, x_max+1, 1)
-            plt.figure(figsize=(12, 5))
-            plt.plot(x, y)
-            plt.title(f'Зміна значення ЦФ від кількості ітерації генетичного алгоритму ({s_class})')
-            plt.xlabel("Номер ітерації")
-            plt.ylabel("Значення ЦФ")
-            plt.grid(alpha=0.3)
+
+            drop_iters = [i for i in range(1, len(y)) if y[i] < y[i-1]]
+
+            if len(drop_iters) >= 2:
+                gaps = [(drop_iters[i+1] - drop_iters[i], drop_iters[i], drop_iters[i+1])
+                        for i in range(len(drop_iters) - 1)]
+                max_gap = max(gaps, key=lambda g: g[0])
+            else:
+                max_gap = None
+
+            fig, ax = plt.subplots(figsize=(12, 5))
+            ax.plot(x, y, zorder=1)
+            ax.scatter(drop_iters, [y[i] for i in drop_iters],
+                       color='red', s=20, zorder=2, label='покращення')
+
+            if max_gap is not None:
+                gap_size, g_start, g_end = max_gap
+                mid = (g_start + g_end) / 2
+                y_mid = (y[g_start] + y[g_end]) / 2
+                ax.annotate(f'max gap = {gap_size}',
+                            xy=(mid, y_mid),
+                            xytext=(mid, y_mid + (y[0] - y[-1]) * 0.05),
+                            ha='center', fontsize=9, color='darkred',
+                            arrowprops=dict(arrowstyle='->', color='darkred'))
+
+            ax.set_title(f'Зміна значення ЦФ від кількості ітерації генетичного алгоритму ({s_class})')
+            ax.set_xlabel("Номер ітерації")
+            ax.set_ylabel("Значення ЦФ")
+            ax.grid(alpha=0.3)
+            ax.legend(fontsize=8)
 
             plot_path = self._get_plot_path("experiment_1_" + s_class)
             plt.savefig(plot_path, dpi=300)
@@ -136,11 +160,14 @@ class ExperimentCreator:
             plt.show()
             plt.close()
 
-        self.fixed_generations = int(self.fixed_generations)
-
         s_classes = ["S1", "S2", "S3"]
+        if isinstance(self.fixed_generations, dict):
+            gens_per_s = {s: int(self.fixed_generations[s]) for s in s_classes}
+        else:
+            gens_per_s = {s: int(self.fixed_generations) for s in s_classes}
+
         jobs = [
-            (s, r_class_name, b_class_name, self.fixed_generations,
+            (s, r_class_name, b_class_name, gens_per_s[s],
              self.ga_params_1["pop_size"],
              self.ga_params_1["mutation_rate"],
              self.ga_params_1["elite_percent"])
@@ -154,7 +181,7 @@ class ExperimentCreator:
                 results[s_class] = history
 
         for s in s_classes:
-            plot_result(self.fixed_generations, results[s], s)
+            plot_result(gens_per_s[s], results[s], s)
 
         return results
 
@@ -260,7 +287,7 @@ class ExperimentCreator:
 
         base_m = 5
         base_n = 10
-        base_q = 2
+        base_q = 5
         K = self.K_3
 
         jobs = []
